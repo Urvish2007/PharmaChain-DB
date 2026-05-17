@@ -1,0 +1,2277 @@
+\documentclass[12pt, a4paper]{article}
+% --- PACKAGES FOR FANCY PAGE BORDER ---
+\usepackage{tikz}
+\usetikzlibrary{calc}
+\usepackage{eso-pic}
+
+% --- DRAW THE BORDER ON EVERY PAGE ---
+\AddToShipoutPictureBG{%
+  \begin{tikzpicture}[overlay,remember picture]
+    % 1. Outer Thick Border
+    \draw[line width=1.5pt, color=black] 
+         ($(current page.north west) + (1cm,-1cm)$) 
+         rectangle 
+         ($(current page.south east) + (-1cm,1cm)$);
+         
+    % 2. Inner Thin Border
+    \draw[line width=0.5pt, color=black] 
+         ($(current page.north west) + (1.1cm,-1.1cm)$) 
+         rectangle 
+         ($(current page.south east) + (-1.1cm,1.1cm)$);
+  \end{tikzpicture}
+}
+
+% Required Packages
+\usepackage[utf8]{inputenc}
+\usepackage{geometry}
+\geometry{top=1in, bottom=1in, left=1.2in, right=1in}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{amsmath}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{fontawesome5}
+
+% SQL Code Block Styling for Portfolio
+\lstset{
+    language=SQL,
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{blue}\bfseries,
+    stringstyle=\color{red},
+    commentstyle=\color{green!60!black},
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    stepnumber=1,
+    breaklines=true,
+    frame=single,
+    backgroundcolor=\color{gray!5}
+}
+
+% Hyperlink Styling
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=blue,
+    pdftitle={PharmaChain-DB Technical Report},
+}
+
+\begin{document}
+
+% ==========================================
+% 1. PROFESSIONAL TITLE PAGE
+% ==========================================
+\begin{titlepage}
+    \centering
+    \vspace*{2cm}
+    
+    % Optional: Add a project logo if you have one, or delete this line
+    %\includegraphics[width=0.3\textwidth]{logo.png}\\[1cm]
+    
+    {\Huge\bfseries PharmaChain-DB\par}
+    \vspace{0.5cm}
+   {\LARGE\scshape Core Database Design for\par Pharmaceutical Manufacturing\par}
+    
+    \vspace{2.5cm}
+    
+    {\Large\itshape Developed by:}\\[0.5cm]
+    {\LARGE \textbf{Urvish Babariya}}\\[0.8cm]
+    
+    % Professional Links
+    % add this in preamble
+
+{\large \faGithub\ \textbf{GitHub:} 
+\href{https://github.com/Urvish2007/PharmaChain-DB}{github.com/Urvish2007/PharmaChain-DB}}\\[0.2cm]
+
+{\large \faLinkedin\ \textbf{LinkedIn:} 
+\href{https://www.linkedin.com/in/urvish-babariya-b38180305/}{linkedin.com/in/Urvish-Babariya}}\\[0.2cm]
+
+{\large \faEnvelope\ \textbf{Email:} 
+\href{mailto:urvishbabariya501@gmail.com}{urvishbabariya501@gmail.com}}\\[2cm]
+
+    \vfill
+    {\large \textbf{}}
+\end{titlepage}
+
+\newpage
+\tableofcontents
+\newpage
+
+% ==========================================
+% 2. EXECUTIVE SUMMARY
+% ==========================================
+\section{Executive Summary}
+\textbf{PostgreSQL} and \textbf{PL/pgSQL}, this project demonstrates strong \textbf{backend database design}, \textbf{secure data handling}, and \textbf{automation} for pharmaceutical manufacturing systems.
+
+The main goal of \textbf{PharmaChain-DB} is to move important \textbf{business logic} directly into the \textbf{database} instead of depending heavily on \textbf{application code}. The system uses smart \textbf{database triggers}, well-structured \textbf{normalized tables}, and \textbf{stored procedures} to automatically enforce \textbf{FDA compliance rules}, manage \textbf{real-time inventory}, and handle \textbf{emergency product recalls} safely and efficiently.
+
+
+\subsection{Comprehensive Entity Dictionary \& Use Cases}
+To accurately model a highly regulated pharmaceutical factory, the database is divided into specialized tables across five distinct operational zones. Here is the complete breakdown of every entity, its role, and its business value:
+
+\subsubsection*{1. Master Registries (The Ground Truth)}
+These tables act as the foundational dictionaries of the system. Nothing can happen in the factory unless it is first registered here.
+
+\begin{itemize}
+    \item[$\rightarrow$] \textbf{\underline{Material\_Master}:} The catalog of raw chemical ingredients (APIs and Excipients).
+    \\ \textbf{Use Case:} Tracks critical safety data like hazardous status and storage conditions before chemicals ever enter the building.
+    
+    \item[$\rightarrow$] \textbf{\underline{Account\_Master}:} The directory of all external business partners (Suppliers, Distributors, Hospitals).
+    \\ \textbf{Use Case:} Links financial invoices to real-world companies so the business knows exactly who they are buying from and selling to.
+    
+    \item[$\rightarrow$] \textbf{\underline{Employee\_Master}:} The directory of factory staff and their roles.
+    \\ \textbf{Use Case:} Provides accountability. Every lab test or machine operation is permanently tagged to a specific employee's ID.
+    
+    \item[$\rightarrow$] \textbf{\underline{Equipment\_Master}:} The registry of all physical machines on the factory floor.
+    \\ \textbf{Use Case:} Tracks calibration dates and maintenance statuses to prevent production from running on broken equipment.
+
+    \item[$\rightarrow$] \textbf{\underline{Product\_Master}:} The official catalog of finished medicines the company produces.
+    \\ \textbf{Use Case:} Ensures the factory only manufactures approved, legally registered drugs.
+\end{itemize}
+
+\subsubsection*{2. Financials \& Logistics}
+These tables handle the money, legal agreements, and corporate accounting.
+
+\begin{itemize}
+    \item[$\rightarrow$] \textbf{\underline{Transactions}:} The unified financial ledger for both buying and selling.
+    \\ \textbf{Use Case:} Centralizes all corporate accounting into one place to easily track cash flow, invoice statuses, and revenue without data duplication.
+    
+    \item[$\rightarrow$] \textbf{\underline{Supplier\_Contract}:} The legal agreements locked in with raw material vendors.
+    \\ \textbf{Use Case:} Prevents the purchasing team from buying chemicals at the wrong price or using an expired legal contract.
+\end{itemize}
+
+\subsubsection*{3. Inventory Pipeline}
+These tables manage the physical storage and safety screening of incoming raw materials.
+
+\begin{itemize}
+    \item[$\rightarrow$] \textbf{\underline{Warehouse}:} The real-time physical storage tracker utilizing serialized unique key pairing.
+    \\ \textbf{Use Case:} Gives managers an exact count of what is on the shelves, enabling automated alerts when stock drops below safe reorder levels.
+    
+    \item[$\rightarrow$] \textbf{\underline{RM\_Transaction} (Raw Material):} The link between a purchased raw material and its financial invoice.
+    \\ \textbf{Use Case:} Allows auditors to calculate exactly how much money is tied up in raw chemicals sitting in the warehouse.
+
+    \item[$\rightarrow$] \textbf{\underline{Material\_Quality\_Check}:} Laboratory test results for newly purchased raw chemicals.
+    \\ \textbf{Use Case:} Stops contaminated, expired, or low-purity chemicals from ever reaching the factory mixing machines.
+\end{itemize}
+
+\subsubsection*{4. Production Floor}
+These tables track the actual creation of the medicine on the factory floor.
+
+\begin{itemize}
+    \item[$\rightarrow$] \textbf{\underline{Formula\_Master}:} The exact chemical recipe (Bill of Materials) for a medicine.
+    \\ \textbf{Use Case:} Dictates the precise ratio of raw materials required, preventing operators from mixing the wrong chemicals together.
+    
+    \item[$\rightarrow$] \textbf{\underline{Batch}:} The central hub of the database; it tracks a specific production run of a medicine.
+    \\ \textbf{Use Case:} Provides absolute traceability. It calculates the expiry date, tracks how many pills were yielded, and acts as the bridge between raw materials and final sales.
+    
+    \item[$\rightarrow$] \textbf{\underline{Material\_Dispensing}:} Records the exact moment a worker takes raw materials out of the warehouse to put into a batch.
+    \\ \textbf{Use Case:} This table triggers the automated stock deduction, instantly updating warehouse inventory without requiring human math.
+    
+    \item[$\rightarrow$] \textbf{\underline{Production\_Log}:} A timestamped diary of machine usage featuring asynchronous clock validation.
+    \\ \textbf{Use Case:} Allows managers to track processing bottlenecks by measuring exactly how long each manufacturing stage takes.
+\end{itemize}
+
+\subsubsection*{5. Post-Production Compliance}
+These tables enforce FDA regulations, track equipment health, and handle the medicine leaving the factory.
+
+\begin{itemize}
+    \item[$\rightarrow$] \textbf{\underline{Product\_Quality\_Check}:} The final laboratory test results for newly manufactured medicine batches.
+    \\ \textbf{Use Case:} The ultimate gatekeeper. This table holds the PASSED/FAILED grades that determine if a medicine is legally safe to leave the factory.
+    
+    \item[$\rightarrow$] \textbf{\underline{FG\_Transaction} (Finished Goods):} Records the sale of finished medicine to hospitals or distributors.
+    \\ \textbf{Use Case:} Automatically triggers the Sales Compliance Blocker trigger. If the linked batch failed its lab test, this table rejects the sale entirely.
+    
+    \item[$\rightarrow$] \textbf{\underline{Product\_Recall}:} The emergency quarantine registry.
+    \\ \textbf{Use Case:} In the event of a safety crisis, this allows executives to instantly log the recall, quarantine the lab records, and drop physical warehouse stock to zero to prevent further harm.
+
+    \item[$\rightarrow$] \textbf{\underline{Maintenance\_Log}:} The historical record of machine repairs.
+    \\ \textbf{Use Case:} Helps the finance team calculate which machines are costing the most money to keep running.
+\end{itemize}
+
+% ==========================================
+% SECTION: ENTITY-RELATIONSHIP DIAGRAM
+% ==========================================
+\newpage
+\section{Entity-Relationship Diagram}
+\vfill
+\begin{center}
+    \makebox[\textwidth][c]{\includegraphics[angle=90, height=\textwidth, width=0.85\textheight, keepaspectratio]{er_diagram.jpeg}}
+\end{center}
+\vfill
+
+% ==========================================
+% SECTION: RELATIONAL DIAGRAM (DIA)
+% ==========================================
+\newpage
+\section{Relational Diagram (Created using DIA)}
+\vfill
+\begin{center}
+    \makebox[\textwidth][c]{\includegraphics[angle=90, height=\textwidth, width=0.85\textheight, keepaspectratio]{relational_diagram_dia.jpeg}}
+\end{center}
+\vfill
+
+% ==========================================
+% SECTION: RELATIONAL DIAGRAM (POSTGRESQL)
+% ==========================================
+\newpage
+\section{Relational Diagram (Generated via PostgreSQL)}
+\vfill
+\begin{center}
+    \makebox[\textwidth][c]{\includegraphics[angle=90, height=\textwidth, width=0.85\textheight, keepaspectratio]{relational_diagram_postgres.png}}
+\end{center}
+\vfill
+
+% ==========================================
+% SECTION: NORMALIZATION & BCNF PROOFS
+% ==========================================
+\newpage
+\section{Normalization and Functional Dependencies}
+To guarantee data integrity and completely eliminate insert, update, and delete anomalies, the entire database architecture has been mathematically verified to satisfy Boyce-Codd Normal Form (BCNF). Below are the functional dependency (FD) proofs for every entity in the system.
+
+% --- ZONE 1: MASTER REGISTRIES ---
+\subsection{Master Registries}
+
+\subsubsection{Table: Material\_Master}
+Let $R = \{ \text{Material\_ID, Material\_Name, UOM, Storage\_Condition, isHazardous} \}$
+\begin{enumerate}
+    \item[(a)] \textbf{Inferred FDs:} $\text{Material\_ID} \rightarrow \text{Material\_Name, UOM, Storage\_Condition, isHazardous}$
+    \item[(b)] \textbf{Minimal Set of FDs:} 
+    \\ $\text{Material\_ID} \rightarrow \text{Material\_Name}$
+    \\ $\text{Material\_ID} \rightarrow \text{UOM}$
+    \\ $\text{Material\_ID} \rightarrow \text{Storage\_Condition}$
+    \\ $\text{Material\_ID} \rightarrow \text{isHazardous}$
+    \item[(c)] \textbf{Keys:} Primary Key = $\{ \text{Material\_ID} \}$
+    \item[(d)] \textbf{Proof of BCNF:} For every non-trivial FD ($X \rightarrow Y$), the determinant $X$ ($\text{Material\_ID}$) is a candidate key. No partial or transitive dependencies exist.
+    \item[(e)] \textbf{Statement:} The table is in BCNF because all attributes depend strictly on the complete primary key.
+\end{enumerate}
+
+\subsubsection{Table: Account\_Master}
+Let $R = \{ \text{Account\_No, Account\_Name, Account\_Type, Phone\_No, Email} \}$
+\begin{enumerate}
+    \item[(a)] \textbf{Inferred FDs:} $\text{Account\_No} \rightarrow \text{Account\_Name, Account\_Type, Phone\_No, Email}$
+    \item[(b)] \textbf{Minimal Set of FDs:} 
+    \\ $\text{Account\_No} \rightarrow \text{Account\_Name}$
+    \\ $\text{Account\_No} \rightarrow \text{Account\_Type}$
+    \\ $\text{Account\_No} \rightarrow \text{Phone\_No}$
+    \\ $\text{Account\_No} \rightarrow \text{Email}$
+    \item[(c)] \textbf{Keys:} Primary Key = $\{ \text{Account\_No} \}$
+    \item[(d)] \textbf{Proof of BCNF:} The only determinant in the relation is Account\_No, which uniquely identifies the entire tuple.
+    \item[(e)] \textbf{Statement:} The table is in BCNF as there are no dependencies on non-prime attributes.
+\end{enumerate}
+
+\subsubsection{Table: Employee\_Master}
+Let $R = \{ \text{Emp\_ID, Emp\_Name, Role, Department} \}$
+\begin{enumerate}
+    \item[(a)] \textbf{Inferred FDs:} $\text{Emp\_ID} \rightarrow \text{Emp\_Name, Role, Department}$
+    \item[(b)] \textbf{Minimal Set of FDs:} 
+    \\ $\text{Emp\_ID} \rightarrow \text{Emp\_Name}$
+    \\ $\text{Emp\_ID} \rightarrow \text{Role}$
+    \\ $\text{Emp\_ID} \rightarrow \text{Department}$
+    \item[(c)] \textbf{Keys:} Primary Key = $\{ \text{Emp\_ID} \}$
+    \item[(d)] \textbf{Proof of BCNF:} The LHS of all functional dependencies is Emp\_ID, which is the superkey.
+    \item[(e)] \textbf{Statement:} The table satisfies BCNF requirements perfectly.
+\end{enumerate}
+
+\subsubsection{Table: Equipment\_Master}
+Let $R = \{ \text{Equipment\_ID, Equipment\_Name, Equipment\_Type, Last\_Calibration} \}$
+\begin{enumerate}
+    \item[(a)] \textbf{Inferred FDs:} $\text{Equipment\_ID} \rightarrow \text{Equipment\_Name, Equipment\_Type, Last\_Calibration}$
+    \item[(b)] \textbf{Minimal Set of FDs:} 
+    \\ $\text{Equipment\_ID} \rightarrow \text{Equipment\_Name}$
+    \\ $\text{Equipment\_ID} \rightarrow \text{Equipment\_Type}$
+    \\ $\text{Equipment\_ID} \rightarrow \text{Last\_Calibration}$
+    \item[(c)] \textbf{Keys:} Primary Key = $\{ \text{Equipment\_ID} \}$
+    \item[(d)] \textbf{Proof of BCNF:} Equipment\_ID is the sole determinant and acts as the unique identifier.
+    \item[(e)] \textbf{Statement:} The table is in BCNF.
+\end{enumerate}
+
+\subsubsection{Table: Product\_Master}
+Let $R = \{ \text{Product\_ID, Product\_Name, Product\_Type} \}$
+\begin{enumerate}
+    \item[(a)] \textbf{Inferred FDs:} $\text{Product\_ID} \rightarrow \text{Product\_Name, Product\_Type}$
+    \item[(b)] \textbf{Minimal Set of FDs:} 
+    \\ $\text{Product\_ID} \rightarrow \text{Product\_Name}$
+    \\ $\text{Product\_ID} \rightarrow \text{Product\_Type}$
+    \item[(c)] \textbf{Keys:} Primary Key = $\{ \text{Product\_ID} \}$
+    \item[(d)] \textbf{Proof of BCNF:} Product\_ID determines all attributes; there are no composite key partial dependencies.
+    \item[(e)] \textbf{Statement:} The table is in BCNF.
+\end{enumerate}
+
+% --- ZONE 2: LOGISTICS & FINANCIALS ---
+\subsection{Logistics and Financials}
+
+\subsubsection{Table: Transactions}
+Let $R = \{ \text{Invoice\_No, Account\_No, Transaction\_Date, Transaction\_Type, Total\_Value} \}$
+\begin{enumerate}
+    \item[(a)] \textbf{Inferred FDs:} $\text{Invoice\_No} \rightarrow \text{Account\_No, Transaction\_Date, Transaction\_Type, Total\_Value}$
+    \item[(b)] \textbf{Minimal Set of FDs:} 
+    \\ $\text{Invoice\_No} \rightarrow \text{Account\_No}$
+    \\ $\text{Invoice\_No} \rightarrow \text{Transaction\_Date}$
+    \\ $\text{Invoice\_No} \rightarrow \text{Transaction\_Type}$
+    \\ $\text{Invoice\_No} \rightarrow \text{Total\_Value}$
+    \item[(c)] \textbf{Keys:} Primary Key = $\{ \text{Invoice\_No} \}$
+    \item[(d)] \textbf{Proof of BCNF:} The invoice number uniquely identifies the transaction record. The Account\_No is a foreign key but does not determine the invoice details.
+    \item[(e)] \textbf{Statement:} The table is in BCNF.
+\end{enumerate}
+
+\subsubsection{Table: Supplier\_Contract}
+Let $R = \{ \text{Contract\_ID, Account\_No, Material\_ID, Agreed\_Price, Valid\_Until} \}$
+\begin{enumerate}
+    \item[(a)] \textbf{Inferred FDs:} $\text{Contract\_ID} \rightarrow \text{Account\_No, Material\_ID, Agreed\_Price, Valid\_Until}$
+    \item[(b)] \textbf{Minimal Set of FDs:} 
+    \\ $\text{Contract\_ID} \rightarrow \text{Account\_No}$
+    \\ $\text{Contract\_ID} \rightarrow \text{Material\_ID}$
+    \\ $\text{Contract\_ID} \rightarrow \text{Agreed\_Price}$
+    \\ $\text{Contract\_ID} \rightarrow \text{Valid\_Until}$
+    \item[(c)] \textbf{Keys:} Primary Key = $\{ \text{Contract\_ID} \}$
+    \item[(d)] \textbf{Proof of BCNF:} The synthetic key Contract\_ID determines all attributes. 
+    \item[(e)] \textbf{Statement:} The table is mathematically in BCNF.
+\end{enumerate}
+
+\subsubsection{Table: Warehouse}
+Let $R = \{ \text{Item\_ID, Material\_ID, Stock, Invoice\_No} \}$
+\begin{enumerate}
+    \item[(a)] \textbf{Inferred FDs:} $\text{Item\_ID} \rightarrow \text{Material\_ID, Stock, Invoice\_No}$
+    \item[(b)] \textbf{Minimal Set of FDs:} 
+    \\ $\text{Item\_ID} \rightarrow \text{Material\_ID}$
+    \\ $\text{Item\_ID} \rightarrow \text{Stock}$
+    \\ $\text{Item\_ID} \rightarrow \text{Invoice\_No}$
+    \item[(c)] \textbf{Keys:} Primary Key = $\{ \text{Item\_ID} \}$
+    \item[(d)] \textbf{Proof of BCNF:} Item\_ID (representing a serialized warehouse barcode) is a superkey determining the physical location and state of the material.
+    \item[(e)] \textbf{Statement:} The table successfully achieves BCNF.
+\end{enumerate}
+
+\subsubsection{Table: RM\_Transaction}
+Let $R = \{ \text{Invoice\_No, Material\_ID, Qty\_Purchased, Unit\_Price} \}$
+\begin{enumerate}
+    \item[(a)] \textbf{Inferred FDs:} $\{ \text{Invoice\_No, Material\_ID} \} \rightarrow \text{Qty\_Purchased, Unit\_Price}$
+    \item[(b)] \textbf{Minimal Set of FDs:} 
+    \\ $\{ \text{Invoice\_No, Material\_ID} \} \rightarrow \text{Qty\_Purchased}$
+    \\ $\{ \text{Invoice\_No, Material\_ID} \} \rightarrow \text{Unit\_Price}$
+    \item[(c)] \textbf{Keys:} Composite Primary Key = $\{ \text{Invoice\_No, Material\_ID} \}$
+    \item[(d)] \textbf{Proof of BCNF:} Neither Invoice\_No nor Material\_ID alone can determine the purchased quantity or price. The composite key is the only determinant.
+    \item[(e)] \textbf{Statement:} Because the determinant is the full composite key, it is in BCNF.
+\end{enumerate}
+
+% --- ZONE 3: MANUFACTURING FLOOR ---
+\subsection{Manufacturing Floor}
+
+\subsubsection{Table: Formula\_Master}
+Let $R = \{ \text{Product\_ID, Material\_ID, Required\_Qty} \}$
+\begin{enumerate}
+    \item[(a)] \textbf{Inferred FDs:} $\{ \text{Product\_ID, Material\_ID} \} \rightarrow \text{Required\_Qty}$
+    \item[(b)] \textbf{Minimal Set of FDs:} 
+    \\ $\{ \text{Product\_ID, Material\_ID} \} \rightarrow \text{Required\_Qty}$
+    \item[(c)] \textbf{Keys:} Composite Primary Key = $\{ \text{Product\_ID, Material\_ID} \}$
+    \item[(d)] \textbf{Proof of BCNF:} The required quantity depends entirely on both the final product and the specific raw material ingredient.
+    \item[(e)] \textbf{Statement:} The table is in BCNF.
+\end{enumerate}
+
+\subsubsection{Table: Batch}
+Let $R = \{ \text{Batch\_No, Batch\_Size, Mfg\_Date, Exp\_Date, Product\_ID, Stock\_Qty, UT\_Q\_A, Yield\_Percentage} \}$
+\begin{enumerate}
+    \item[(a)] \textbf{Inferred FDs:} $\text{Batch\_No} \rightarrow \text{Batch\_Size, Mfg\_Date, Exp\_Date, Product\_ID, Stock\_Qty, UT\_Q\_A, Yield\_Percentage}$
+    \item[(b)] \textbf{Minimal Set of FDs:} 
+    \\ $\text{Batch\_No} \rightarrow \text{Batch\_Size}$
+    \\ $\text{Batch\_No} \rightarrow \text{Mfg\_Date}$
+    \\ (Repeated for all non-prime attributes)
+    \item[(c)] \textbf{Keys:} Primary Key = $\{ \text{Batch\_No} \}$
+    \item[(d)] \textbf{Proof of BCNF:} All production metrics depend entirely on the unique Batch number.
+    \item[(e)] \textbf{Statement:} The table is fully normalized to BCNF.
+\end{enumerate}
+
+\subsubsection{Table: Material\_Dispensing}
+Let $R = \{ \text{Batch\_No, Item\_ID, Quantity\_Issued} \}$
+\begin{enumerate}
+    \item[(a)] \textbf{Inferred FDs:} $\{ \text{Batch\_No, Item\_ID} \} \rightarrow \text{Quantity\_Issued}$
+    \item[(b)] \textbf{Minimal Set of FDs:} 
+    \\ $\{ \text{Batch\_No, Item\_ID} \} \rightarrow \text{Quantity\_Issued}$
+    \item[(c)] \textbf{Keys:} Composite Primary Key = $\{ \text{Batch\_No, Item\_ID} \}$
+    \item[(d)] \textbf{Proof of BCNF:} The quantity issued can only be determined by knowing both the specific batch requesting it and the specific warehouse item it is pulled from.
+    \item[(e)] \textbf{Statement:} The table satisfies BCNF.
+\end{enumerate}
+
+\subsubsection{Table: Production\_Log}
+Let $R = \{ \text{Log\_ID, Batch\_No, Equipment\_ID, Process\_Stage, Start\_Time, End\_Time} \}$
+\begin{enumerate}
+    \item[(a)] \textbf{Inferred FDs:} $\text{Log\_ID} \rightarrow \text{Batch\_No, Equipment\_ID, Process\_Stage, Start\_Time, End\_Time}$
+    \item[(b)] \textbf{Minimal Set of FDs:} 
+    \\ $\text{Log\_ID} \rightarrow \text{Batch\_No}$
+    \\ $\text{Log\_ID} \rightarrow \text{Equipment\_ID}$
+    \\ (Repeated for all non-prime attributes)
+    \item[(c)] \textbf{Keys:} Primary Key = $\{ \text{Log\_ID} \}$
+    \item[(d)] \textbf{Proof of BCNF:} Log\_ID is the superkey. No partial dependencies on Batch\_No or Equipment\_ID exist.
+    \item[(e)] \textbf{Statement:} The table is in BCNF.
+\end{enumerate}
+
+% --- ZONE 4: QA AND COMPLIANCE ---
+\subsection{Quality Assurance and Compliance}
+
+\subsubsection{Table: Material\_Quality\_Check}
+Let $R = \{ \text{Report\_ID, Item\_ID, Emp\_ID, Analysis\_Date, Results} \}$
+\begin{enumerate}
+    \item[(a)] \textbf{Inferred FDs:} $\text{Report\_ID} \rightarrow \text{Item\_ID, Emp\_ID, Analysis\_Date, Results}$
+    \item[(b)] \textbf{Minimal Set of FDs:} 
+    \\ $\text{Report\_ID} \rightarrow \text{Item\_ID}$
+    \\ $\text{Report\_ID} \rightarrow \text{Emp\_ID}$
+    \\ (Repeated for all non-prime attributes)
+    \item[(c)] \textbf{Keys:} Primary Key = $\{ \text{Report\_ID} \}$
+    \item[(d)] \textbf{Proof of BCNF:} Report\_ID uniquely identifies the specific laboratory test event.
+    \item[(e)] \textbf{Statement:} The table is in BCNF.
+\end{enumerate}
+
+\subsubsection{Table: Product\_Quality\_Check}
+Let $R = \{ \text{Report\_ID, Batch\_No, Emp\_ID, Analysis\_Date, Test, Limits, Results} \}$
+\begin{enumerate}
+    \item[(a)] \textbf{Inferred FDs:} $\text{Report\_ID} \rightarrow \text{Batch\_No, Emp\_ID, Analysis\_Date, Test, Limits, Results}$
+    \item[(b)] \textbf{Minimal Set of FDs:} 
+    \\ $\text{Report\_ID} \rightarrow \text{Batch\_No}$
+    \\ $\text{Report\_ID} \rightarrow \text{Results}$
+    \\ (Repeated for all non-prime attributes)
+    \item[(c)] \textbf{Keys:} Primary Key = $\{ \text{Report\_ID} \}$
+    \item[(d)] \textbf{Proof of BCNF:} The LHS of all FDs is the superkey Report\_ID.
+    \item[(e)] \textbf{Statement:} The table is in BCNF.
+\end{enumerate}
+
+\subsubsection{Table: QC\_Audit\_Log}
+Let $R = \{ \text{Audit\_ID, Report\_ID, Action\_Type, Old\_Result, New\_Result, Changed\_By, Change\_Date} \}$
+\begin{enumerate}
+    \item[(a)] \textbf{Inferred FDs:} $\text{Audit\_ID} \rightarrow \text{Report\_ID, Action\_Type, Old\_Result, New\_Result, Changed\_By, Change\_Date}$
+    \item[(b)] \textbf{Minimal Set of FDs:} 
+    \\ $\text{Audit\_ID} \rightarrow \text{Report\_ID}$
+    \\ $\text{Audit\_ID} \rightarrow \text{Action\_Type}$
+    \\ (Repeated for all non-prime attributes)
+    \item[(c)] \textbf{Keys:} Primary Key = $\{ \text{Audit\_ID} \}$
+    \item[(d)] \textbf{Proof of BCNF:} Audit\_ID is an auto-incrementing surrogate key that determines all audit trail metrics.
+    \item[(e)] \textbf{Statement:} The table is in BCNF.
+\end{enumerate}
+
+\subsubsection{Table: Maintenance\_Log}
+Let $R = \{ \text{Maintenance\_ID, Equipment\_ID, Cost, Description, Maintenance\_Date} \}$
+\begin{enumerate}
+    \item[(a)] \textbf{Inferred FDs:} $\text{Maintenance\_ID} \rightarrow \text{Equipment\_ID, Cost, Description, Maintenance\_Date}$
+    \item[(b)] \textbf{Minimal Set of FDs:} 
+    \\ $\text{Maintenance\_ID} \rightarrow \text{Equipment\_ID}$
+    \\ $\text{Maintenance\_ID} \rightarrow \text{Cost}$
+    \\ (Repeated for all non-prime attributes)
+    \item[(c)] \textbf{Keys:} Primary Key = $\{ \text{Maintenance\_ID} \}$
+    \item[(d)] \textbf{Proof of BCNF:} The primary key is the sole determinant.
+    \item[(e)] \textbf{Statement:} The table is in BCNF.
+\end{enumerate}
+
+% --- ZONE 5: COMMERCIAL SALES & RECALLS ---
+\subsection{Commercial Operations}
+
+\subsubsection{Table: FG\_Transaction}
+Let $R = \{ \text{Transaction\_ID, Invoice\_No, Batch\_No, Sale\_Qty, Val} \}$
+\begin{enumerate}
+    \item[(a)] \textbf{Inferred FDs:} $\text{Transaction\_ID} \rightarrow \text{Invoice\_No, Batch\_No, Sale\_Qty, Val}$
+    \item[(b)] \textbf{Minimal Set of FDs:} 
+    \\ $\text{Transaction\_ID} \rightarrow \text{Invoice\_No}$
+    \\ $\text{Transaction\_ID} \rightarrow \text{Batch\_No}$
+    \\ $\text{Transaction\_ID} \rightarrow \text{Sale\_Qty}$
+    \\ $\text{Transaction\_ID} \rightarrow \text{Val}$
+    \item[(c)] \textbf{Keys:} Primary Key = $\{ \text{Transaction\_ID} \}$
+    \item[(d)] \textbf{Proof of BCNF:} A specific line-item sale is determined exclusively by the Transaction\_ID.
+    \item[(e)] \textbf{Statement:} The table is in BCNF.
+\end{enumerate}
+
+\subsubsection{Table: Product\_Recall}
+Let $R = \{ \text{Recall\_ID, Batch\_No, Date\_Initiated, Reason, Qty\_Recalled} \}$
+\begin{enumerate}
+    \item[(a)] \textbf{Inferred FDs:} $\text{Recall\_ID} \rightarrow \text{Batch\_No, Date\_Initiated, Reason, Qty\_Recalled}$
+    \item[(b)] \textbf{Minimal Set of FDs:} 
+    \\ $\text{Recall\_ID} \rightarrow \text{Batch\_No}$
+    \\ $\text{Recall\_ID} \rightarrow \text{Date\_Initiated}$
+    \\ $\text{Recall\_ID} \rightarrow \text{Reason}$
+    \\ $\text{Recall\_ID} \rightarrow \text{Qty\_Recalled}$
+    \item[(c)] \textbf{Keys:} Primary Key = $\{ \text{Recall\_ID} \}$
+    \item[(d)] \textbf{Proof of BCNF:} Recall\_ID is the singular superkey determining the parameters of the emergency event.
+    \item[(e)] \textbf{Statement:} The table is perfectly normalized to BCNF.
+\end{enumerate}
+
+% ==========================================
+% SECTION: DATA DEFINITION LANGUAGE (DDL)
+% ==========================================
+\newpage
+\section{Data Definition Language (DDL) Scripts}
+The following SQL script defines the physical schema, data types, primary keys, foreign key constraints (with cascading rules), and domain constraints (\texttt{CHECK} clauses) for the entire PostgreSQL database.
+
+\begin{lstlisting}[language=SQL, caption=Complete DDL Script for PharmaChain-DB Architecture]
+CREATE SCHEMA IF NOT EXISTS pharma_manufacturing;
+
+SET search_path TO pharma_manufacturing;
+
+-- 1. Master Tables
+CREATE TABLE Material_Master (
+    Material_ID          VARCHAR(20)   PRIMARY KEY,
+    Material_Name        VARCHAR(30)   NOT NULL,
+    Material_Type        VARCHAR(20)   NOT NULL,
+    Storage_Condition    VARCHAR(100)  NOT NULL,
+    Shelf_Life           NUMERIC(3)    NOT NULL CHECK (Shelf_Life > 0),
+    Therapeutic_Category VARCHAR(30)   NOT NULL,
+    Material_State       VARCHAR(10)   NOT NULL,
+    isHazardous          BOOLEAN       NOT NULL,
+    isInflammable        BOOLEAN       NOT NULL,
+    UOM                  VARCHAR(3)    NOT NULL,
+    Reorder_Level        NUMERIC(10)   DEFAULT 1000 CHECK (Reorder_Level > 0)
+);
+
+CREATE TABLE Account_Master (
+    Account_No   VARCHAR(11)  PRIMARY KEY,
+    Account_Name VARCHAR(50)  NOT NULL,
+    Phone_No     VARCHAR(13)  NOT NULL,
+    Address      VARCHAR(100) NOT NULL,
+    Account_Type VARCHAR(20)  DEFAULT 'Distributor' CHECK (Account_Type IN ('Supplier', 'Distributor', 'Hospital'))
+);
+
+CREATE TABLE Employee_Master (
+    Emp_ID       VARCHAR(20) PRIMARY KEY,
+    Emp_Name     VARCHAR(50) NOT NULL,
+    Department   VARCHAR(30) NOT NULL,
+    Role         VARCHAR(30) NOT NULL,
+    Hire_Date    DATE NOT NULL
+);
+
+CREATE TABLE Equipment_Master (
+    Equipment_ID          VARCHAR(20) PRIMARY KEY,
+    Equipment_Name        VARCHAR(50) NOT NULL,
+    Equipment_Type        VARCHAR(30) NOT NULL,
+    Last_Calibration_Date DATE NOT NULL,
+    Status                VARCHAR(20) NOT NULL CHECK (Status IN ('Active', 'Maintenance'))
+);
+
+CREATE TABLE Product_Master (
+    Product_ID       VARCHAR(20) PRIMARY KEY,
+    Product_Name     VARCHAR(20) NOT NULL,
+    Generic_Name     VARCHAR(100) NOT NULL,
+    Product_Type     VARCHAR(20) NOT NULL,
+    Packing_Type     VARCHAR(10) NOT NULL,
+    Packing_Size     VARCHAR(5)  NOT NULL,
+    SalableorSample  VARCHAR(1)  NOT NULL CHECK (SalableorSample IN ('M','S')),
+    GenericorBranded VARCHAR(1)  NOT NULL CHECK (GenericorBranded IN ('G','B'))
+);
+
+-- 2. Transaction & Contract Tables
+CREATE TABLE Transactions (
+    Invoice_No       NUMERIC(10)   PRIMARY KEY,
+    Transaction_Date DATE          NOT NULL,
+    Currency         VARCHAR(3)    NOT NULL,
+    Transaction_Type VARCHAR(4)    NOT NULL CHECK (Transaction_Type IN ('buy','sell')),
+    Paid_Received    BOOLEAN       NOT NULL,
+    Account_No       VARCHAR(11)   REFERENCES Account_Master(Account_No) ON DELETE CASCADE ON UPDATE CASCADE,
+    Total_Value      NUMERIC(10,2) NOT NULL CHECK (Total_Value > 0)
+);
+
+CREATE TABLE Supplier_Contract (
+    Contract_ID   VARCHAR(20) PRIMARY KEY,
+    Account_No    VARCHAR(11) NOT NULL REFERENCES Account_Master(Account_No) ON DELETE CASCADE ON UPDATE CASCADE,
+    Material_ID   VARCHAR(20) NOT NULL REFERENCES Material_Master(Material_ID) ON DELETE CASCADE ON UPDATE CASCADE,
+    Agreed_Price  NUMERIC(10,2) NOT NULL CHECK (Agreed_Price > 0),
+    Valid_Until   DATE NOT NULL
+);
+
+-- 3. Warehouse & Inventory
+CREATE TABLE Warehouse (
+    Item_ID     BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    Material_ID VARCHAR(20) NOT NULL REFERENCES Material_Master(Material_ID) ON DELETE CASCADE ON UPDATE CASCADE,
+    Invoice_No  NUMERIC(10) NOT NULL REFERENCES Transactions(Invoice_No) ON DELETE CASCADE ON UPDATE CASCADE,
+    UT_Q_A      VARCHAR(2)  NOT NULL,
+    Stock       NUMERIC(10) NOT NULL CHECK (Stock > 0),
+    CONSTRAINT uq_warehouse_mat_inv UNIQUE (Material_ID, Invoice_No)
+);
+
+CREATE TABLE RM_Transaction (
+    Invoice_No NUMERIC(10)   NOT NULL REFERENCES Transactions(Invoice_No) ON DELETE CASCADE ON UPDATE CASCADE,
+    Item_ID    BIGINT        NOT NULL REFERENCES Warehouse(Item_ID) ON DELETE CASCADE ON UPDATE CASCADE,
+    RM_Qty     NUMERIC(10)   NOT NULL CHECK (RM_Qty > 0),
+    Val        NUMERIC(10,2) NOT NULL CHECK (Val > 0),
+    CONSTRAINT pk_rm_transaction PRIMARY KEY (Invoice_No, Item_ID)
+);
+
+CREATE TABLE Material_Quality_Check (
+    Report_ID     VARCHAR(20)  PRIMARY KEY,
+    Item_ID       BIGINT       NOT NULL,
+    Analysis_Date DATE         NOT NULL,
+    Analyst_Name  VARCHAR(20)  NOT NULL,
+    Sample_Size   NUMERIC(10)  NOT NULL CHECK (Sample_Size > 0),
+    Test          VARCHAR(20)  NOT NULL,
+    Limits        VARCHAR(20)  NOT NULL,
+    Results       VARCHAR(30)  NOT NULL,
+    Emp_ID        VARCHAR(20)  REFERENCES Employee_Master(Emp_ID) ON DELETE SET NULL,
+    CONSTRAINT fk_mqc_warehouse FOREIGN KEY (Item_ID) REFERENCES Warehouse(Item_ID) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+-- 4. Manufacturing & Production
+CREATE TABLE Formula_Master (
+    Product_ID        VARCHAR(20) NOT NULL REFERENCES Product_Master(Product_ID) ON DELETE CASCADE ON UPDATE CASCADE,
+    Material_ID       VARCHAR(20) NOT NULL REFERENCES Material_Master(Material_ID) ON DELETE CASCADE ON UPDATE CASCADE,
+    Weight_per_tablet NUMERIC(10) NOT NULL CHECK (Weight_per_tablet > 0),
+    CONSTRAINT pk_formula_master PRIMARY KEY (Product_ID, Material_ID)
+);
+
+CREATE TABLE Batch (
+    Batch_No         NUMERIC(10) PRIMARY KEY,
+    Batch_Size       NUMERIC(10) NOT NULL CHECK (Batch_Size > 0),
+    Mfg_Date         DATE        NOT NULL,
+    Exp_Date         DATE,
+    Product_ID       VARCHAR(20) REFERENCES Product_Master(Product_ID) ON DELETE CASCADE ON UPDATE CASCADE,
+    Stock_Qty        NUMERIC(10) NOT NULL CHECK (Stock_Qty >= 0),
+    UT_Q_A           VARCHAR(2)  NOT NULL,
+    Yield_Percentage NUMERIC(5,2) DEFAULT 98.50 CHECK (Yield_Percentage >= 0 AND Yield_Percentage <= 100)
+);
+
+CREATE TABLE Material_Dispensing (
+    Batch_No         NUMERIC(10) NOT NULL REFERENCES Batch(Batch_No) ON DELETE CASCADE ON UPDATE CASCADE,
+    Item_ID          BIGINT      NOT NULL REFERENCES Warehouse(Item_ID) ON DELETE CASCADE ON UPDATE CASCADE,
+    Quantity_Issued  NUMERIC(10) NOT NULL CHECK (Quantity_Issued > 0),
+    CONSTRAINT pk_material_dispensing PRIMARY KEY (Batch_No, Item_ID)
+);
+
+CREATE TABLE Production_Log (
+    Log_ID        BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    Batch_No      NUMERIC(10) NOT NULL REFERENCES Batch(Batch_No) ON DELETE CASCADE ON UPDATE CASCADE,
+    Equipment_ID  VARCHAR(20) REFERENCES Equipment_Master(Equipment_ID) ON DELETE SET NULL ON UPDATE CASCADE,
+    Emp_ID        VARCHAR(20) REFERENCES Employee_Master(Emp_ID) ON DELETE SET NULL ON UPDATE CASCADE,
+    Process_Stage VARCHAR(30) NOT NULL,
+    Start_Time    TIMESTAMP NOT NULL,
+    End_Time      TIMESTAMP NOT NULL,
+    CONSTRAINT chk_time CHECK (End_Time > Start_Time)
+);
+
+-- 5. Final Quality & Post-Production
+CREATE TABLE Product_Quality_Check (
+    Report_ID     VARCHAR(20)  PRIMARY KEY,
+    Batch_No      NUMERIC(10)  REFERENCES Batch(Batch_No) ON DELETE CASCADE ON UPDATE CASCADE,
+    Analysis_Date DATE         NOT NULL,
+    Analyst_Name  VARCHAR(20)  NOT NULL,
+    Sample_Size   NUMERIC(10)  NOT NULL CHECK (Sample_Size > 0),
+    Process_State VARCHAR(20)  NOT NULL,
+    Test          VARCHAR(20)  NOT NULL,
+    Limits        VARCHAR(20)  NOT NULL,
+    Results       VARCHAR(30)  NOT NULL,
+    Emp_ID        VARCHAR(20)  REFERENCES Employee_Master(Emp_ID) ON DELETE SET NULL
+);
+
+CREATE TABLE FG_Transaction (
+    Invoice_No NUMERIC(10)   NOT NULL REFERENCES Transactions(Invoice_No) ON DELETE CASCADE ON UPDATE CASCADE,
+    Batch_No   NUMERIC(10)   NOT NULL REFERENCES Batch(Batch_No) ON DELETE CASCADE ON UPDATE CASCADE,
+    Sale_Qty   NUMERIC(10)   NOT NULL CHECK (Sale_Qty > 0),
+    Val        NUMERIC(10,2) NOT NULL CHECK (Val > 0),
+    CONSTRAINT pk_fg_transaction PRIMARY KEY (Invoice_No, Batch_No)
+);
+
+CREATE TABLE Product_Recall (
+    Recall_ID      VARCHAR(20) PRIMARY KEY,
+    Batch_No       NUMERIC(10) NOT NULL REFERENCES Batch(Batch_No) ON DELETE CASCADE ON UPDATE CASCADE,
+    Date_Initiated DATE NOT NULL,
+    Reason         VARCHAR(255) NOT NULL,
+    Qty_Recalled   NUMERIC(10) NOT NULL CHECK (Qty_Recalled > 0)
+);
+
+CREATE TABLE Maintenance_Log (
+    Maintenance_ID   VARCHAR(20) PRIMARY KEY,
+    Equipment_ID     VARCHAR(20) NOT NULL REFERENCES Equipment_Master(Equipment_ID) ON DELETE CASCADE ON UPDATE CASCADE,
+    Emp_ID           VARCHAR(20) REFERENCES Employee_Master(Emp_ID) ON DELETE SET NULL ON UPDATE CASCADE,
+    Maintenance_Date DATE NOT NULL,
+    Cost             NUMERIC(10,2) NOT NULL CHECK (Cost >= 0)
+);
+
+
+-- TABLE: Quality Control Audit Log (The Hidden Vault)
+
+CREATE TABLE QC_Audit_Log (
+    Audit_ID SERIAL PRIMARY KEY,      
+    Report_ID VARCHAR(20),           
+    Action_Type VARCHAR(10),         
+    Old_Result VARCHAR(50),          
+    New_Result VARCHAR(50),          
+    Changed_By VARCHAR(50),           
+    Change_Date TIMESTAMP DEFAULT CURRENT_TIMESTAMP 
+);
+\end{lstlisting}
+
+% ==========================================
+% SECTION: DATA MANIPULATION LANGUAGE (DML)
+% ==========================================
+\newpage
+\section{Data Manipulation Language (DML) Scripts}
+The following script populates the PharmaChain-DB schema with synthetic enterprise data, simulating a fully operational factory environment. It establishes the master registries, physical inventory, multi-currency financial transactions, and highly interconnected production batch logs.
+
+\begin{lstlisting}[language=SQL, caption=Enterprise Data Insertion (DML) Script]
+INSERT INTO Employee_Master (Emp_ID, Emp_Name, Department, Role, Hire_Date) VALUES
+('EMP001', 'Dr. Ajay Sharma', 'Quality Control', 'Lead Analyst', '2015-04-12'),
+('EMP002', 'Hitesh Patel', 'Quality Control', 'Lab Technician', '2018-01-10'),
+('EMP003', 'Sunil Desai', 'Production', 'Machine Operator', '2017-06-22'),
+('EMP004', 'Vikram Singh', 'Production', 'Machine Operator', '2019-03-15'),
+('EMP005', 'Anita Roy', 'Production', 'Floor Supervisor', '2014-11-05'),
+('EMP006', 'Ramesh Kumar', 'Maintenance', 'Senior Mechanic', '2016-08-19'),
+('EMP007', 'Suresh Pillai', 'Maintenance', 'Electrical Engineer', '2020-02-01'),
+('EMP008', 'Kavita Menon', 'Supply Chain', 'Procurement Officer', '2018-09-11'),
+('EMP009', 'Nitin Gadkari', 'Warehouse', 'Inventory Manager', '2015-07-07'),
+('EMP010', 'Dr. Meera Iyer', 'Quality Assurance', 'QA Director', '2012-05-30'),
+('EMP011', 'Rahul Verma', 'Quality Control', 'Analyst', '2021-03-10'),
+('EMP012', 'Priya Singh', 'Production', 'Packaging Specialist', '2020-07-15'),
+('EMP013', 'Amit Shah', 'Warehouse', 'Forklift Operator', '2019-11-20'),
+('EMP014', 'Neha Gupta', 'Quality Assurance', 'Compliance Officer', '2016-02-14'),
+('EMP015', 'Sanjay Dutt', 'Maintenance', 'Plumbing Tech', '2018-05-05'),
+('EMP016', 'Pooja Reddy', 'Supply Chain', 'Vendor Liaison', '2022-01-10'),
+('EMP017', 'Arjun Nair', 'Production', 'Machine Operator', '2021-08-25'),
+('EMP018', 'Karan Johar', 'Warehouse', 'Logistics Clerk', '2020-12-01'),
+('EMP019', 'Riya Sen', 'Quality Control', 'Microbiologist', '2017-09-15'),
+('EMP020', 'Manoj Bajpayee', 'Production', 'Shift Manager', '2013-04-20');
+
+INSERT INTO Equipment_Master (Equipment_ID, Equipment_Name, Equipment_Type, Last_Calibration_Date, Status) VALUES
+('EQ001', 'High Shear Mixer A', 'Mixer', '2023-01-15', 'Active'),
+('EQ002', 'High Shear Mixer B', 'Mixer', '2023-01-20', 'Active'),
+('EQ003', 'Fluid Bed Granulator 1', 'Granulator', '2023-01-10', 'Maintenance'),
+('EQ004', 'Rotary Tablet Press 1', 'Compressor', '2023-01-05', 'Active'),
+('EQ005', 'Rotary Tablet Press 2', 'Compressor', '2023-01-12', 'Active'),
+('EQ006', 'Auto Film Coater', 'Coater', '2023-01-01', 'Active'),
+('EQ007', 'Blister Packaging Line A', 'Packaging', '2023-01-28', 'Active'),
+('EQ008', 'Bottle Filling Line B', 'Packaging', '2023-01-15', 'Active'),
+('EQ009', 'Liquid Mixing Tank 500L', 'Liquid Processor', '2023-01-10', 'Active'),
+('EQ010', 'Syrup Bottling Station', 'Packaging', '2023-01-01', 'Active'),
+('EQ011', 'Capsule Filling Machine', 'Filler', '2023-01-11', 'Active'),
+('EQ012', 'V-Cone Blender', 'Mixer', '2023-01-09', 'Active'),
+('EQ013', 'Fluid Bed Granulator 2', 'Granulator', '2023-01-18', 'Active'),
+('EQ014', 'Tablet Checking Machine', 'QA Equipment', '2023-01-22', 'Active'),
+('EQ015', 'Cartoning Machine', 'Packaging', '2023-01-30', 'Maintenance'),
+('EQ016', 'Purified Water System', 'Utility', '2023-01-02', 'Active'),
+('EQ017', 'Air Handling Unit', 'Utility', '2023-01-03', 'Active'),
+('EQ018', 'Industrial Autoclave', 'Sterilizer', '2023-01-14', 'Active'),
+('EQ019', 'Metal Detector Line', 'QA Equipment', '2023-01-25', 'Active'),
+('EQ020', 'Shrink Wrapping Machine', 'Packaging', '2023-01-29', 'Active');
+
+INSERT INTO Account_Master (Account_No, Account_Name, Phone_No, Address, Account_Type) VALUES
+('ACC001', 'AK Pharma Raw Materials', '911023456789', 'Vatva, Gujarat', 'Supplier'),
+('ACC002', 'Stallion Chemical Corp', '919099234567', 'Changodar, Gujarat', 'Supplier'),
+('ACC003', 'West Coast API Labs', '913243423342', 'Business Park, Ahmedabad', 'Supplier'),
+('ACC004', 'Sagar Bulk Drugs', '913891819333', 'Pharma Hub, Mumbai', 'Supplier'),
+('ACC005', 'Sehat-E-Zafran Labs', '651231312312', 'ADNEC, Abu Dhabi', 'Supplier'),
+('ACC006', 'Justeen Excipients', '233312311333', 'Kosad Road, Nigeria', 'Supplier'),
+('ACC007', 'Global Chemicals Ltd', '912233445566', 'Navi Mumbai', 'Supplier'),
+('ACC008', 'Pure APIs Inc', '18005551234', 'New York, USA', 'Supplier'),
+('ACC009', 'EuroPharma Raw', '442071234567', 'London, UK', 'Supplier'),
+('ACC010', 'Zhengzhou Organics', '861012345678', 'Zhengzhou, China', 'Supplier'),
+('ACC011', 'Zydus Hospitals', '915685685887', 'Ahmedabad', 'Hospital'),
+('ACC012', 'Apollo Pharmacy Chain', '918565655675', 'Ahmedabad', 'Distributor'),
+('ACC013', 'Silis Global Distributors', '311312312312', 'Jaipur', 'Distributor'),
+('ACC014', 'Danadams Africa Supply', '651308080809', 'Lagos', 'Distributor'),
+('ACC015', 'Fortis Healthcare', '911122334455', 'Delhi', 'Hospital'),
+('ACC016', 'MedPlus Network', '919988776655', 'Hyderabad', 'Distributor'),
+('ACC017', 'Max Super Speciality', '917766554433', 'Gurgaon', 'Hospital'),
+('ACC018', 'NetMeds Delivery', '918877665544', 'Chennai', 'Distributor'),
+('ACC019', 'Pharmeasy Logistics', '916655443322', 'Mumbai', 'Distributor'),
+('ACC020', 'AIIMS Central', '911123456789', 'New Delhi', 'Hospital');
+
+INSERT INTO Material_Master (Material_ID, Material_Name, Material_Type, Storage_Condition, Shelf_Life, Therapeutic_Category, Material_State, isHazardous, isInflammable, UOM, Reorder_Level) VALUES
+('MAT001', 'Paracetamol API', 'Drug', 'Room Temp < 30C', 24, 'Antipyretic', 'Solid', FALSE, FALSE, 'kg', 5000),
+('MAT002', 'Omeprazole', 'Drug', 'Room Temp < 25C', 24, 'Anti-ulcer', 'Solid', FALSE, FALSE, 'kg', 2000),
+('MAT003', 'Azithromycin Dihydrate', 'Drug', 'Room Temp < 25C', 12, 'Antibiotic', 'Solid', FALSE, FALSE, 'kg', 1500),
+('MAT004', 'Atorvastatin', 'Drug', 'Protect from light', 18, 'Cardio-vascular', 'Solid', FALSE, FALSE, 'kg', 1000),
+('MAT005', 'Amoxycillin Trihydrate', 'Drug', 'Store in dry conditions', 18, 'Antibiotic', 'Solid', TRUE, FALSE, 'kg', 3000),
+('MAT006', 'Diphenhydramine', 'Drug', 'Room Temp < 25C', 12, 'Anti-cold', 'Solid', FALSE, FALSE, 'kg', 1000),
+('MAT007', 'Sodium Starch Glycolate', 'Excipient', 'Cool and dry place', 36, 'Disintegrating Agent', 'Solid', FALSE, FALSE, 'kg', 8000),
+('MAT008', 'Methyl Cellulose', 'Excipient', 'Cool and dry place', 48, 'Binder', 'Solid', FALSE, FALSE, 'kg', 10000),
+('MAT009', 'Sucrose', 'Excipient', 'Cool and dry place', 36, 'Sweetener', 'Solid', FALSE, FALSE, 'kg', 15000),
+('MAT010', 'Starch', 'Excipient', 'Cool and dry place', 48, 'Filler', 'Solid', FALSE, FALSE, 'kg', 20000),
+('MAT011', 'Isopropyl Alcohol', 'Excipient', 'Protect from light', 24, 'Solvent', 'Liquid', TRUE, TRUE, 'ltr', 5000),
+('MAT012', 'Vitamin A', 'Supplement', 'Room Temp < 30C', 36, 'Nutritional', 'Solid', FALSE, FALSE, 'kg', 500),
+('MAT013', 'Vitamin D3', 'Supplement', 'Room Temp < 30C', 24, 'Nutritional', 'Solid', FALSE, FALSE, 'kg', 500),
+('MAT014', 'Lactose Monohydrate', 'Excipient', 'Dry place', 48, 'Diluent', 'Solid', FALSE, FALSE, 'kg', 5000),
+('MAT015', 'Magnesium Stearate', 'Excipient', 'Dry place', 36, 'Lubricant', 'Solid', FALSE, FALSE, 'kg', 2000),
+('MAT016', 'Talc', 'Excipient', 'Dry place', 60, 'Glidant', 'Solid', FALSE, FALSE, 'kg', 3000),
+('MAT017', 'Ciprofloxacin', 'Drug', 'Protect from light', 24, 'Antibiotic', 'Solid', FALSE, FALSE, 'kg', 1500),
+('MAT018', 'Ibuprofen', 'Drug', 'Room Temp < 25C', 36, 'Analgesic', 'Solid', FALSE, FALSE, 'kg', 4000),
+('MAT019', 'Glimepiride', 'Drug', 'Room Temp < 25C', 24, 'Anti-diabetic', 'Solid', FALSE, FALSE, 'kg', 1000),
+('MAT020', 'Propylene Glycol', 'Excipient', 'Room Temp < 25C', 24, 'Solvent', 'Liquid', FALSE, TRUE, 'ltr', 2500);
+
+INSERT INTO Product_Master (Product_ID, Product_Name, Generic_Name, Product_Type, Packing_Type, Packing_Size, SalableorSample, GenericorBranded) VALUES
+('PRD001', 'Parabufen', 'Paracetamol Ibuprofen', 'Tablet', 'BLI', '3x10', 'M', 'B'),
+('PRD002', 'Omsergy', 'Omeprazole', 'Capsule', 'ALU', '10x10', 'M', 'B'),
+('PRD003', 'Exicof', 'Cough Syrup', 'Syrup', 'BOT', '1x1', 'M', 'B'),
+('PRD004', 'Atorvastatin 20', 'Atorvastatin', 'Tablet', 'ALU', '3x10', 'M', 'G'),
+('PRD005', 'Amoxyn', 'Amoxycillin Oral Susp', 'Syrup', 'BOT', '1x1', 'M', 'B'),
+('PRD006', 'Vitarich', 'Multivitamin', 'Tablet', 'ALU', '2x10', 'M', 'B'),
+('PRD007', 'Zithrol 500', 'Azithromycin', 'Tablet', 'BLI', '1x3', 'M', 'B'),
+('PRD008', 'Aller-D', 'Diphenhydramine', 'Capsule', 'BLI', '2x10', 'M', 'B'),
+('PRD009', 'Cipro-Max', 'Ciprofloxacin', 'Tablet', 'ALU', '10x10', 'M', 'B'),
+('PRD010', 'Ibupro-G', 'Ibuprofen', 'Tablet', 'BLI', '5x10', 'M', 'G'),
+('PRD011', 'Glimeta 2', 'Glimepiride', 'Tablet', 'ALU', '3x15', 'M', 'B'),
+('PRD012', 'Para-500', 'Paracetamol', 'Tablet', 'BLI', '10x10', 'S', 'G'),
+('PRD013', 'Para-650', 'Paracetamol', 'Tablet', 'BLI', '10x10', 'M', 'G'),
+('PRD014', 'Vit-D Core', 'Vitamin D3', 'Capsule', 'BOT', '1x30', 'M', 'B'),
+('PRD015', 'Ome-Protect', 'Omeprazole', 'Capsule', 'ALU', '2x15', 'S', 'B'),
+('PRD016', 'Amox-500', 'Amoxycillin', 'Capsule', 'BLI', '3x10', 'M', 'G'),
+('PRD017', 'Atorva-10', 'Atorvastatin', 'Tablet', 'ALU', '3x10', 'S', 'G'),
+('PRD018', 'Zithro-Susp', 'Azithromycin', 'Syrup', 'BOT', '1x1', 'M', 'B'),
+('PRD019', 'Glime-M', 'Glimepiride', 'Tablet', 'ALU', '5x10', 'M', 'G'),
+('PRD020', 'Cipro-Drops', 'Ciprofloxacin', 'Liquid', 'BOT', '1x1', 'M', 'B');
+
+INSERT INTO Transactions (Invoice_No, Transaction_Date, Currency, Transaction_Type, Paid_Received, Account_No, Total_Value) VALUES
+(1001, '2023-02-01', 'INR', 'buy', TRUE, 'ACC001', 150000.00),
+(1002, '2023-02-02', 'INR', 'buy', TRUE, 'ACC002', 120000.00),
+(1003, '2023-02-03', 'INR', 'buy', FALSE, 'ACC003', 180000.00),
+(1004, '2023-02-04', 'USD', 'buy', TRUE, 'ACC004', 50000.00),
+(1005, '2023-02-05', 'AED', 'buy', TRUE, 'ACC005', 75000.00),
+(1006, '2023-02-06', 'INR', 'buy', TRUE, 'ACC006', 40000.00),
+(1007, '2023-02-07', 'INR', 'buy', TRUE, 'ACC007', 95000.00),
+(1008, '2023-02-08', 'USD', 'buy', FALSE, 'ACC008', 110000.00),
+(1009, '2023-02-09', 'EUR', 'buy', TRUE, 'ACC009', 200000.00),
+(1010, '2023-02-10', 'CNY', 'buy', TRUE, 'ACC010', 130000.00),
+(1011, '2023-02-11', 'INR', 'buy', TRUE, 'ACC001', 60000.00),
+(1012, '2023-02-12', 'INR', 'buy', TRUE, 'ACC002', 70000.00),
+(1013, '2023-02-13', 'INR', 'buy', TRUE, 'ACC003', 80000.00),
+(1014, '2023-02-14', 'INR', 'buy', FALSE, 'ACC004', 90000.00),
+(1015, '2023-02-15', 'INR', 'buy', TRUE, 'ACC005', 100000.00),
+(1016, '2023-02-16', 'INR', 'buy', TRUE, 'ACC006', 110000.00),
+(1017, '2023-02-17', 'INR', 'buy', TRUE, 'ACC007', 120000.00),
+(1018, '2023-02-18', 'INR', 'buy', TRUE, 'ACC008', 130000.00),
+(1019, '2023-02-19', 'INR', 'buy', FALSE, 'ACC009', 140000.00),
+(1020, '2023-02-20', 'INR', 'buy', TRUE, 'ACC010', 150000.00),
+(2001, '2023-04-01', 'INR', 'sell', TRUE, 'ACC011', 250000.00),
+(2002, '2023-04-02', 'INR', 'sell', TRUE, 'ACC012', 300000.00),
+(2003, '2023-04-03', 'INR', 'sell', FALSE, 'ACC013', 150000.00),
+(2004, '2023-04-04', 'INR', 'sell', TRUE, 'ACC014', 400000.00),
+(2005, '2023-04-05', 'INR', 'sell', TRUE, 'ACC015', 500000.00),
+(2006, '2023-04-06', 'INR', 'sell', TRUE, 'ACC016', 200000.00),
+(2007, '2023-04-07', 'INR', 'sell', TRUE, 'ACC017', 350000.00),
+(2008, '2023-04-08', 'INR', 'sell', FALSE, 'ACC018', 450000.00),
+(2009, '2023-04-09', 'INR', 'sell', TRUE, 'ACC019', 120000.00),
+(2010, '2023-04-10', 'INR', 'sell', TRUE, 'ACC020', 280000.00),
+(2011, '2023-04-11', 'INR', 'sell', TRUE, 'ACC011', 110000.00),
+(2012, '2023-04-12', 'INR', 'sell', TRUE, 'ACC012', 220000.00),
+(2013, '2023-04-13', 'INR', 'sell', TRUE, 'ACC013', 330000.00),
+(2014, '2023-04-14', 'INR', 'sell', FALSE, 'ACC014', 440000.00),
+(2015, '2023-04-15', 'INR', 'sell', TRUE, 'ACC015', 550000.00),
+(2016, '2023-04-16', 'INR', 'sell', TRUE, 'ACC016', 660000.00),
+(2017, '2023-04-17', 'INR', 'sell', TRUE, 'ACC017', 770000.00),
+(2018, '2023-04-18', 'INR', 'sell', FALSE, 'ACC018', 880000.00),
+(2019, '2023-04-19', 'INR', 'sell', TRUE, 'ACC019', 990000.00),
+(2020, '2023-04-20', 'INR', 'sell', TRUE, 'ACC020', 1000000.00);
+
+INSERT INTO Supplier_Contract (Contract_ID, Account_No, Material_ID, Agreed_Price, Valid_Until) VALUES
+('CON001', 'ACC001', 'MAT001', 15.50, '2024-12-31'),
+('CON002', 'ACC002', 'MAT002', 45.00, '2024-12-31'),
+('CON003', 'ACC003', 'MAT003', 120.00, '2025-06-30'),
+('CON004', 'ACC004', 'MAT004', 85.00, '2025-12-31'),
+('CON005', 'ACC005', 'MAT005', 30.00, '2024-12-31'),
+('CON006', 'ACC006', 'MAT006', 22.50, '2024-08-15'),
+('CON007', 'ACC007', 'MAT007', 5.00, '2025-01-01'),
+('CON008', 'ACC008', 'MAT008', 8.50, '2024-11-30'),
+('CON009', 'ACC009', 'MAT009', 2.00, '2026-12-31'),
+('CON010', 'ACC010', 'MAT010', 1.50, '2026-12-31'),
+('CON011', 'ACC001', 'MAT011', 12.00, '2024-10-31'),
+('CON012', 'ACC002', 'MAT012', 65.00, '2025-05-31'),
+('CON013', 'ACC003', 'MAT013', 55.00, '2025-05-31'),
+('CON014', 'ACC004', 'MAT014', 4.00, '2024-12-31'),
+('CON015', 'ACC005', 'MAT015', 6.00, '2024-12-31'),
+('CON016', 'ACC006', 'MAT016', 3.50, '2024-12-31'),
+('CON017', 'ACC007', 'MAT017', 110.00, '2025-02-28'),
+('CON018', 'ACC008', 'MAT018', 18.00, '2025-03-31'),
+('CON019', 'ACC009', 'MAT019', 95.00, '2025-04-30'),
+('CON020', 'ACC010', 'MAT020', 14.00, '2024-09-30');
+
+INSERT INTO Warehouse OVERRIDING SYSTEM VALUE VALUES
+(1, 'MAT001', 1001, 'UT', 10000),
+(2, 'MAT002', 1002, 'UT', 2000),
+(3, 'MAT003', 1003, 'UT', 1500),
+(4, 'MAT004', 1004, 'UT', 1000),
+(5, 'MAT005', 1005, 'UT', 3000),
+(6, 'MAT006', 1006, 'UT', 1000),
+(7, 'MAT007', 1007, 'UT', 8000),
+(8, 'MAT008', 1008, 'UT', 10000),
+(9, 'MAT009', 1009, 'UT', 15000),
+(10, 'MAT010', 1010, 'UT', 20000),
+(11, 'MAT011', 1011, 'UT', 5000),
+(12, 'MAT012', 1012, 'UT', 500),
+(13, 'MAT013', 1013, 'UT', 500),
+(14, 'MAT014', 1014, 'UT', 5000),
+(15, 'MAT015', 1015, 'UT', 2000),
+(16, 'MAT016', 1016, 'UT', 3000),
+(17, 'MAT017', 1017, 'UT', 1500),
+(18, 'MAT018', 1018, 'UT', 4000),
+(19, 'MAT019', 1019, 'UT', 1000),
+(20, 'MAT020', 1020, 'UT', 2500);
+
+INSERT INTO RM_Transaction (Invoice_No, Item_ID, RM_Qty, Val) VALUES
+(1001, 1, 10000, 150000.00),
+(1002, 2, 2000, 120000.00),
+(1003, 3, 1500, 180000.00),
+(1004, 4, 1000, 50000.00),
+(1005, 5, 3000, 75000.00),
+(1006, 6, 1000, 40000.00),
+(1007, 7, 8000, 95000.00),
+(1008, 8, 10000, 110000.00),
+(1009, 9, 15000, 200000.00),
+(1010, 10, 20000, 130000.00),
+(1011, 11, 5000, 60000.00),
+(1012, 12, 500, 70000.00),
+(1013, 13, 500, 80000.00),
+(1014, 14, 5000, 90000.00),
+(1015, 15, 2000, 100000.00),
+(1016, 16, 3000, 110000.00),
+(1017, 17, 1500, 120000.00),
+(1018, 18, 4000, 130000.00),
+(1019, 19, 1000, 140000.00),
+(1020, 20, 2500, 150000.00);
+
+INSERT INTO Material_Quality_Check (Report_ID, Item_ID, Analysis_Date, Analyst_Name, Sample_Size, Test, Limits, Results, Emp_ID) VALUES
+('MQC001', 1, '2023-02-02', 'Legacy_Name', 5, 'Potency', '>95%', 'PASSED', 'EMP001'),
+('MQC002', 2, '2023-02-03', 'Legacy_Name', 2, 'Potency', '>98%', 'PASSED', 'EMP002'),
+('MQC003', 3, '2023-02-04', 'Legacy_Name', 10, 'Purity', '>99%', 'PASSED', 'EMP011'),
+('MQC004', 4, '2023-02-05', 'Legacy_Name', 10, 'Viscosity', 'Standard', 'PASSED', 'EMP019'),
+('MQC005', 5, '2023-02-06', 'Legacy_Name', 5, 'Purity', '>99.9%', 'FAILED', 'EMP001'),
+('MQC006', 6, '2023-02-07', 'Legacy_Name', 5, 'Potency', '>95%', 'PASSED', 'EMP002'),
+('MQC007', 7, '2023-02-08', 'Legacy_Name', 20, 'Moisture', '<5%', 'PASSED', 'EMP011'),
+('MQC008', 8, '2023-02-09', 'Legacy_Name', 20, 'Moisture', '<5%', 'PASSED', 'EMP019'),
+('MQC009', 9, '2023-02-10', 'Legacy_Name', 30, 'Granularity', 'Standard', 'PASSED', 'EMP001'),
+('MQC010', 10, '2023-02-11', 'Legacy_Name', 30, 'Granularity', 'Standard', 'PASSED', 'EMP002'),
+('MQC011', 11, '2023-02-12', 'Legacy_Name', 5, 'Purity', '>99%', 'PASSED', 'EMP011'),
+('MQC012', 12, '2023-02-13', 'Legacy_Name', 2, 'Assay', '95-105%', 'PASSED', 'EMP019'),
+('MQC013', 13, '2023-02-14', 'Legacy_Name', 2, 'Assay', '95-105%', 'PASSED', 'EMP001'),
+('MQC014', 14, '2023-02-15', 'Legacy_Name', 10, 'Moisture', '<2%', 'PASSED', 'EMP002'),
+('MQC015', 15, '2023-02-16', 'Legacy_Name', 5, 'Purity', '>99%', 'PASSED', 'EMP011'),
+('MQC016', 16, '2023-02-17', 'Legacy_Name', 5, 'Purity', '>99%', 'PASSED', 'EMP019'),
+('MQC017', 17, '2023-02-18', 'Legacy_Name', 5, 'Potency', '>98%', 'PASSED', 'EMP001'),
+('MQC018', 18, '2023-02-19', 'Legacy_Name', 10, 'Potency', '>95%', 'PASSED', 'EMP002'),
+('MQC019', 19, '2023-02-20', 'Legacy_Name', 5, 'Potency', '>99%', 'PASSED', 'EMP011'),
+('MQC020', 20, '2023-02-21', 'Legacy_Name', 10, 'Viscosity', 'Standard', 'FAILED', 'EMP019');
+
+INSERT INTO Formula_Master (Product_ID, Material_ID, Weight_per_tablet) VALUES
+('PRD001', 'MAT001', 500),
+('PRD001', 'MAT018', 200),
+('PRD002', 'MAT002', 200),
+('PRD003', 'MAT006', 1000),
+('PRD004', 'MAT004', 20),
+('PRD005', 'MAT005', 250),
+('PRD006', 'MAT012', 100),
+('PRD007', 'MAT003', 500),
+('PRD008', 'MAT006', 25),
+('PRD009', 'MAT017', 500),
+('PRD010', 'MAT018', 400),
+('PRD011', 'MAT019', 2),
+('PRD012', 'MAT001', 500),
+('PRD013', 'MAT001', 650),
+('PRD014', 'MAT013', 10),
+('PRD015', 'MAT002', 150),
+('PRD016', 'MAT005', 500),
+('PRD017', 'MAT004', 10),
+('PRD018', 'MAT003', 200),
+('PRD019', 'MAT019', 1),
+('PRD020', 'MAT017', 100);
+
+INSERT INTO Batch (Batch_No, Batch_Size, Mfg_Date, Exp_Date, Product_ID, Stock_Qty, UT_Q_A, Yield_Percentage) VALUES
+(5001, 50000, '2023-03-01', '2025-02-28', 'PRD001', 49000, 'UT', 98.00),
+(5002, 25000, '2023-03-02', '2025-02-28', 'PRD002', 24800, 'UT', 99.20),
+(5003, 10000, '2023-03-03', '2024-03-02', 'PRD003', 9500, 'UT', 95.00),
+(5004, 30000, '2023-03-04', '2025-03-03', 'PRD004', 29500, 'UT', 98.33),
+(5005, 40000, '2023-03-05', '2024-03-04', 'PRD005', 39000, 'UT', 97.50),
+(5006, 50000, '2023-03-06', '2026-03-05', 'PRD006', 48000, 'UT', 96.00),
+(5007, 15000, '2023-03-07', '2024-03-06', 'PRD007', 14900, 'UT', 99.33),
+(5008, 20000, '2023-03-08', '2024-03-07', 'PRD008', 19800, 'UT', 99.00),
+(5009, 60000, '2023-03-09', '2025-03-08', 'PRD009', 59000, 'UT', 98.33),
+(5010, 45000, '2023-03-10', '2026-03-09', 'PRD010', 44000, 'UT', 97.77),
+(5011, 25000, '2023-03-11', '2025-03-10', 'PRD011', 24500, 'UT', 98.00),
+(5012, 80000, '2023-03-12', '2025-03-11', 'PRD012', 79000, 'UT', 98.75),
+(5013, 75000, '2023-03-13', '2025-03-12', 'PRD013', 74000, 'UT', 98.66),
+(5014, 10000, '2023-03-14', '2025-03-13', 'PRD014', 9800, 'UT', 98.00),
+(5015, 20000, '2023-03-15', '2025-03-14', 'PRD015', 19500, 'UT', 97.50),
+(5016, 35000, '2023-03-16', '2025-03-15', 'PRD016', 34000, 'UT', 97.14),
+(5017, 30000, '2023-03-17', '2025-03-16', 'PRD017', 29000, 'UT', 96.66),
+(5018, 15000, '2023-03-18', '2024-03-17', 'PRD018', 14500, 'UT', 96.66),
+(5019, 25000, '2023-03-19', '2025-03-18', 'PRD019', 24000, 'UT', 96.00),
+(5020, 10000, '2023-03-20', '2024-03-19', 'PRD020', 9500, 'UT', 95.00);
+
+INSERT INTO Material_Dispensing (Batch_No, Item_ID, Quantity_Issued) VALUES
+(5001, 7, 500),  -- Dispensing Sodium Starch Glycolate (Disintegrant)
+(5001, 8, 200),  -- Dispensing Methyl Cellulose (Binder)
+(5001, 15, 50),  -- Dispensing Magnesium Stearate (Lubricant)
+(5001, 1, 2500),
+(5002, 2, 500),
+(5003, 6, 1000),
+(5004, 4, 600),
+(5005, 5, 1000),
+(5006, 12, 50),
+(5007, 3, 750),
+(5008, 6, 500),
+(5009, 17, 3000),
+(5010, 18, 1800),
+(5011, 19, 50),
+(5012, 1, 4000),
+(5013, 1, 4875),
+(5014, 13, 10),
+(5015, 2, 300),
+(5016, 5, 1750),
+(5017, 4, 300),
+(5018, 3, 300),
+(5019, 19, 25),
+(5020, 17, 100);
+
+INSERT INTO Production_Log (Batch_No, Equipment_ID, Emp_ID, Process_Stage, Start_Time, End_Time) VALUES
+(5001, 'EQ001', 'EMP003', 'Dry Mixing', '2023-03-01 08:00:00', '2023-03-01 10:30:00'),
+(5002, 'EQ002', 'EMP004', 'Wet Granulation', '2023-03-02 11:00:00', '2023-03-02 15:00:00'),
+(5003, 'EQ009', 'EMP005', 'Liquid Processing', '2023-03-03 08:00:00', '2023-03-03 16:30:00'),
+(5004, 'EQ004', 'EMP003', 'Compression', '2023-03-04 09:00:00', '2023-03-04 17:00:00'),
+(5005, 'EQ009', 'EMP004', 'Liquid Processing', '2023-03-05 08:00:00', '2023-03-05 11:00:00'),
+(5006, 'EQ004', 'EMP017', 'Compression', '2023-03-06 08:00:00', '2023-03-06 14:00:00'),
+(5007, 'EQ005', 'EMP003', 'Compression', '2023-03-07 10:00:00', '2023-03-07 18:00:00'),
+(5008, 'EQ011', 'EMP004', 'Capsule Filling', '2023-03-08 08:00:00', '2023-03-08 16:00:00'),
+(5009, 'EQ005', 'EMP017', 'Compression', '2023-03-09 09:00:00', '2023-03-09 17:00:00'),
+(5010, 'EQ004', 'EMP003', 'Compression', '2023-03-10 08:00:00', '2023-03-10 15:00:00'),
+(5011, 'EQ006', 'EMP004', 'Coating', '2023-03-11 11:00:00', '2023-03-11 19:00:00'),
+(5012, 'EQ005', 'EMP017', 'Compression', '2023-03-12 08:00:00', '2023-03-12 20:00:00'),
+(5013, 'EQ004', 'EMP003', 'Compression', '2023-03-13 08:00:00', '2023-03-13 19:00:00'),
+(5014, 'EQ011', 'EMP004', 'Capsule Filling', '2023-03-14 09:00:00', '2023-03-14 13:00:00'),
+(5015, 'EQ011', 'EMP017', 'Capsule Filling', '2023-03-15 14:00:00', '2023-03-15 18:00:00'),
+(5016, 'EQ011', 'EMP003', 'Capsule Filling', '2023-03-16 08:00:00', '2023-03-16 16:00:00'),
+(5017, 'EQ004', 'EMP004', 'Compression', '2023-03-17 10:00:00', '2023-03-17 16:00:00'),
+(5018, 'EQ009', 'EMP017', 'Liquid Processing', '2023-03-18 08:00:00', '2023-03-18 12:00:00'),
+(5019, 'EQ005', 'EMP003', 'Compression', '2023-03-19 13:00:00', '2023-03-19 18:00:00'),
+(5020, 'EQ009', 'EMP004', 'Liquid Processing', '2023-03-20 08:00:00', '2023-03-20 11:00:00');
+
+INSERT INTO Product_Quality_Check (Report_ID, Batch_No, Analysis_Date, Analyst_Name, Sample_Size, Process_State, Test, Limits, Results, Emp_ID) VALUES
+('PQC001', 5001, '2023-03-02', 'Legacy_Name', 100, 'Finished Good', 'Dissolution', '>85% in 30m', 'PASSED', 'EMP001'),
+('PQC002', 5002, '2023-03-03', 'Legacy_Name', 50, 'Finished Good', 'Assay', '95%-105%', 'PASSED', 'EMP002'),
+('PQC003', 5003, '2023-03-04', 'Legacy_Name', 20, 'Finished Good', 'Viscosity', 'Standard', 'FAILED', 'EMP011'),
+('PQC004', 5004, '2023-03-05', 'Legacy_Name', 100, 'Finished Good', 'Hardness', '4-8 kp', 'PASSED', 'EMP019'),
+('PQC005', 5005, '2023-03-06', 'Legacy_Name', 20, 'Finished Good', 'pH Level', '5.0-7.0', 'PASSED', 'EMP001'),
+('PQC006', 5006, '2023-03-07', 'Legacy_Name', 100, 'Finished Good', 'Assay', '90%-110%', 'PASSED', 'EMP002'),
+('PQC007', 5007, '2023-03-08', 'Legacy_Name', 100, 'Finished Good', 'Dissolution', '>80% in 30m', 'PASSED', 'EMP011'),
+('PQC008', 5008, '2023-03-09', 'Legacy_Name', 50, 'Finished Good', 'Disintegration', '<15m', 'PASSED', 'EMP019'),
+('PQC009', 5009, '2023-03-10', 'Legacy_Name', 100, 'Finished Good', 'Assay', '95%-105%', 'PASSED', 'EMP001'),
+('PQC010', 5010, '2023-03-11', 'Legacy_Name', 100, 'Finished Good', 'Hardness', '4-8 kp', 'PASSED', 'EMP002'),
+('PQC011', 5011, '2023-03-12', 'Legacy_Name', 50, 'Finished Good', 'Assay', '90%-110%', 'FAILED', 'EMP011'),
+('PQC012', 5012, '2023-03-13', 'Legacy_Name', 100, 'Finished Good', 'Dissolution', '>85% in 30m', 'PASSED', 'EMP019'),
+('PQC013', 5013, '2023-03-14', 'Legacy_Name', 100, 'Finished Good', 'Hardness', '4-8 kp', 'PASSED', 'EMP001'),
+('PQC014', 5014, '2023-03-15', 'Legacy_Name', 50, 'Finished Good', 'Disintegration', '<15m', 'PASSED', 'EMP002'),
+('PQC015', 5015, '2023-03-16', 'Legacy_Name', 50, 'Finished Good', 'Assay', '95%-105%', 'PASSED', 'EMP011'),
+('PQC016', 5016, '2023-03-17', 'Legacy_Name', 100, 'Finished Good', 'Disintegration', '<15m', 'PASSED', 'EMP019'),
+('PQC017', 5017, '2023-03-18', 'Legacy_Name', 100, 'Finished Good', 'Hardness', '4-8 kp', 'PASSED', 'EMP001'),
+('PQC018', 5018, '2023-03-19', 'Legacy_Name', 20, 'Finished Good', 'pH Level', '5.0-7.0', 'PASSED', 'EMP002'),
+('PQC019', 5019, '2023-03-20', 'Legacy_Name', 100, 'Finished Good', 'Assay', '95%-105%', 'FAILED', 'EMP011'),
+('PQC020', 5020, '2023-03-21', 'Legacy_Name', 20, 'Finished Good', 'Viscosity', 'Standard', 'PASSED', 'EMP019');
+
+INSERT INTO FG_Transaction (Invoice_No, Batch_No, Sale_Qty, Val) VALUES
+(2001, 5001, 20000, 250000.00),
+(2002, 5002, 10000, 300000.00),
+(2003, 5003, 5000, 150000.00),
+(2004, 5004, 15000, 400000.00),
+(2005, 5005, 20000, 500000.00),
+(2006, 5006, 25000, 200000.00),
+(2007, 5007, 10000, 350000.00),
+(2008, 5008, 10000, 450000.00),
+(2009, 5009, 30000, 120000.00),
+(2010, 5010, 20000, 280000.00),
+(2011, 5011, 12000, 110000.00),
+(2012, 5012, 40000, 220000.00),
+(2013, 5013, 35000, 330000.00),
+(2014, 5014, 5000, 440000.00),
+(2015, 5015, 10000, 550000.00),
+(2016, 5016, 15000, 660000.00),
+(2017, 5017, 15000, 770000.00),
+(2018, 5018, 7000, 880000.00),
+(2019, 5019, 12000, 990000.00),
+(2020, 5020, 4000, 1000000.00);
+
+INSERT INTO Product_Recall (Recall_ID, Batch_No, Date_Initiated, Reason, Qty_Recalled) VALUES
+('REC001', 5003, '2023-05-01', 'Failed viscosity stability tests.', 5000),
+('REC002', 5011, '2023-05-02', 'Assay degraded below 90% in market.', 12000),
+('REC003', 5019, '2023-05-03', 'Contamination warning from raw supplier.', 12000),
+('REC004', 5001, '2023-05-04', 'Packaging label misprint.', 1000),
+('REC005', 5002, '2023-05-05', 'Seal integrity failure reported.', 500),
+('REC006', 5004, '2023-05-06', 'Customer reports of bad odor.', 2000),
+('REC007', 5005, '2023-05-07', 'pH level dropped out of spec.', 3000),
+('REC008', 5006, '2023-05-08', 'Voluntary recall - updated formulation.', 4000),
+('REC009', 5007, '2023-05-09', 'Failed 3-month dissolution test.', 1500),
+('REC010', 5008, '2023-05-10', 'Capsule shells brittle.', 2500),
+('REC011', 5009, '2023-05-11', 'Incorrect expiry date printed.', 5000),
+('REC012', 5010, '2023-05-12', 'Discoloration of tablets.', 1000),
+('REC013', 5012, '2023-05-13', 'Failed friability test post-shipping.', 8000),
+('REC014', 5013, '2023-05-14', 'Blister pack foil delamination.', 4500),
+('REC015', 5014, '2023-05-15', 'Sub-potent assay reported by distributor.', 500),
+('REC016', 5015, '2023-05-16', 'Cross-contamination suspected.', 2000),
+('REC017', 5016, '2023-05-17', 'Failed microbial limits test.', 3500),
+('REC018', 5017, '2023-05-18', 'Foreign particle found in bottle.', 100),
+('REC019', 5018, '2023-05-19', 'Syrup crystallized prematurely.', 3000),
+('REC020', 5020, '2023-05-20', 'Dropper malfunction reported.', 1500);
+
+INSERT INTO Maintenance_Log (Maintenance_ID, Equipment_ID, Emp_ID, Maintenance_Date, Cost) VALUES
+('ML001', 'EQ003', 'EMP006', '2023-01-11', 4500.00),
+('ML002', 'EQ015', 'EMP007', '2023-01-31', 1200.50),
+('ML003', 'EQ001', 'EMP015', '2023-02-15', 850.00),
+('ML004', 'EQ002', 'EMP006', '2023-02-20', 300.00),
+('ML005', 'EQ004', 'EMP007', '2023-03-05', 1500.00),
+('ML006', 'EQ005', 'EMP015', '2023-03-10', 900.00),
+('ML007', 'EQ006', 'EMP006', '2023-03-15', 2100.00),
+('ML008', 'EQ007', 'EMP007', '2023-03-20', 400.00),
+('ML009', 'EQ008', 'EMP015', '2023-03-25', 650.00),
+('ML010', 'EQ009', 'EMP006', '2023-04-01', 5000.00),
+('ML011', 'EQ010', 'EMP007', '2023-04-05', 750.00),
+('ML012', 'EQ011', 'EMP015', '2023-04-10', 1100.00),
+('ML013', 'EQ012', 'EMP006', '2023-04-15', 300.00),
+('ML014', 'EQ013', 'EMP007', '2023-04-20', 4200.00),
+('ML015', 'EQ014', 'EMP015', '2023-04-25', 800.00),
+('ML016', 'EQ016', 'EMP006', '2023-05-01', 6000.00),
+('ML017', 'EQ017', 'EMP007', '2023-05-05', 2500.00),
+('ML018', 'EQ018', 'EMP015', '2023-05-10', 1800.00),
+('ML019', 'EQ019', 'EMP006', '2023-05-15', 950.00),
+('ML020', 'EQ020', 'EMP007', '2023-05-20', 450.00);
+\end{lstlisting}
+
+% ==========================================
+% SECTION: RELEVANT QUERIES & ANALYTICS
+% ==========================================
+\newpage
+\section{Relevant SQL Queries \& Enterprise Analytics}
+This section showcases the analytical capabilities of \textbf{PharmaChain-DB}. These queries transform complex, highly structured data into meaningful insights for \textbf{business decisions}, \textbf{compliance tracking}, and \textbf{supply chain monitoring}.
+
+
+% ---------------------------------------------------------
+% QUERY 1
+% ---------------------------------------------------------
+\subsection*{1. Revenue Analytics: "Which products are currently making us the most money?"}
+
+\textbf{Relational Algebra:}
+\vspace{0.2cm}\\
+\noindent\fbox{%
+\begin{minipage}{0.95\textwidth}
+\begin{equation*}
+\begin{split}
+    & \gamma_{\text{Product\_Name, Product\_Type, COUNT(Batch\_No), SUM(Sale\_Qty), SUM(Val)}} \\
+    & \quad (\text{FG\_Transaction} \bowtie \text{Batch} \bowtie \text{Product\_Master})
+\end{split}
+\end{equation*}
+\end{minipage}}
+\vspace{0.2cm}
+
+\begin{lstlisting}
+SELECT 
+    pm.Product_Name,
+    pm.Product_Type,
+    COUNT(DISTINCT fgt.Batch_No) AS Batches_Sold,
+    SUM(fgt.Sale_Qty) AS Total_Units_Sold,
+    SUM(fgt.Val) AS Total_Revenue_INR
+FROM FG_Transaction fgt
+JOIN Batch b ON fgt.Batch_No = b.Batch_No
+JOIN Product_Master pm ON b.Product_ID = pm.Product_ID
+GROUP BY pm.Product_Name, pm.Product_Type
+ORDER BY Total_Revenue_INR DESC;
+\end{lstlisting}
+
+\textbf{Business Significance:}
+\begin{itemize}
+    \item[$\rightarrow$] Identifies high-margin pharmaceutical products driving the company's primary revenue.
+    \item[$\rightarrow$] Guides future production planning by highlighting the most demanded medicines.
+    \item[$\rightarrow$] Evaluates financial performance across different physical product types (e.g., Tablets vs. Syrups).
+\end{itemize}
+
+\textbf{Query Output:}
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.9\textwidth]{1.png}
+    \caption{Output: Revenue Analytics Dashboard}
+\end{figure}
+\vspace{1cm}
+
+% ---------------------------------------------------------
+% QUERY 2
+% ---------------------------------------------------------
+\newpage
+\subsection*{2. The QA Audit: "Show me a timeline of failed batches and who evaluated them."}
+
+\textbf{Relational Algebra:}
+\vspace{0.2cm}\\
+\noindent\fbox{%
+\begin{minipage}{0.95\textwidth}
+\begin{equation*}
+\begin{split}
+    & \tau_{\text{Analysis\_Date} \downarrow} \Big( \pi_{\text{Date, Batch\_No, Name, Test, Limits, Results, Emp\_Name}} \\
+    & \quad \big( \sigma_{\text{Results='FAILED'}} (\text{PQC} \bowtie \text{Batch} \bowtie \text{PM} \bowtie \text{EM}) \big) \Big)
+\end{split}
+\end{equation*}
+\end{minipage}}
+\vspace{0.2cm}
+
+\begin{lstlisting}
+SELECT 
+    pqc.Analysis_Date,
+    pqc.Batch_No,
+    pm.Product_Name,
+    pqc.Test,
+    pqc.Limits,
+    pqc.Results,
+    em.Emp_Name AS Evaluated_By
+FROM Product_Quality_Check pqc
+JOIN Batch b ON pqc.Batch_No = b.Batch_No
+JOIN Product_Master pm ON b.Product_ID = pm.Product_ID
+JOIN Employee_Master em ON pqc.Emp_ID = em.Emp_ID
+WHERE pqc.Results = 'FAILED'
+ORDER BY pqc.Analysis_Date DESC;
+\end{lstlisting}
+
+\textbf{Business Significance:}
+\begin{itemize}
+    \item[$\rightarrow$] Traces systemic quality control failures back to specific production runs.
+    \item[$\rightarrow$] Ensures total accountability by linking a specific lab analyst to a failed result.
+    \item[$\rightarrow$] Provides critical documentation for FDA compliance and internal quality reviews.
+\end{itemize}
+
+\textbf{Query Output:}
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.9\textwidth]{2.png}
+    \caption{Output: Quality Assurance Failure Timeline}
+\end{figure}
+\vspace{1cm}
+
+% ---------------------------------------------------------
+% QUERY 3
+% ---------------------------------------------------------
+\newpage
+\subsection*{3. The Supply Chain Check: "Who are our suppliers and what materials are they under contract to give us?"}
+
+\textbf{Relational Algebra:}
+\vspace{0.2cm}\\
+\noindent\fbox{%
+\begin{minipage}{0.95\textwidth}
+\begin{equation*}
+\begin{split}
+    & \pi_{\text{Account\_Name, Phone\_No, Material\_Name, Agreed\_Price, Valid\_Until}} \\
+    & \quad \big( \sigma_{\text{Valid\_Until} \ge \text{CURRENT\_DATE}} (\text{Contract} \bowtie \text{Account} \bowtie \text{Material}) \big)
+\end{split}
+\end{equation*}
+\end{minipage}}
+\vspace{0.2cm}
+
+\begin{lstlisting}
+SELECT 
+    am.Account_Name AS Supplier_Name,
+    am.Phone_No,
+    mm.Material_Name,
+    sc.Agreed_Price,
+    sc.Valid_Until
+FROM Supplier_Contract sc
+JOIN Account_Master am ON sc.Account_No = am.Account_No
+JOIN Material_Master mm ON sc.Material_ID = mm.Material_ID
+WHERE sc.Valid_Until >= CURRENT_DATE
+ORDER BY am.Account_Name;
+\end{lstlisting}
+
+\textbf{Business Significance:}
+\begin{itemize}
+    \item[$\rightarrow$] Ensures active supply lines by filtering out expired vendor contracts.
+    \item[$\rightarrow$] Monitors negotiated procurement pricing to prevent accidental over-billing.
+    \item[$\rightarrow$] Provides procurement officers with an instant directory of active chemical vendors.
+\end{itemize}
+
+\textbf{Query Output:}
+\begin{figure}[h!]
+    \centering
+   \includegraphics[width=0.9\textwidth]{3.png}
+    \caption{Output: Active Supplier Contracts}
+\end{figure}
+\vspace{1cm}
+
+% ---------------------------------------------------------
+% QUERY 4
+% ---------------------------------------------------------
+\newpage
+\subsection*{4. The Maintenance Alarm: "Which machines cost us the most money in repairs?"}
+
+\textbf{Relational Algebra:}
+\vspace{0.2cm}\\
+\noindent\fbox{%
+\begin{minipage}{0.95\textwidth}
+\begin{equation*}
+\begin{split}
+    & \gamma_{\text{Equipment\_ID, Name, Type, COUNT(Maintenance\_ID), SUM(Cost)}} \\
+    & \quad (\text{Maintenance\_Log} \bowtie \text{Equipment\_Master})
+\end{split}
+\end{equation*}
+\end{minipage}}
+\vspace{0.2cm}
+
+\begin{lstlisting}
+SELECT 
+    eq.Equipment_ID,
+    eq.Equipment_Name,
+    eq.Equipment_Type,
+    COUNT(ml.Maintenance_ID) AS Times_Repaired,
+    SUM(ml.Cost) AS Total_Repair_Cost
+FROM Maintenance_Log ml
+JOIN Equipment_Master eq ON ml.Equipment_ID = eq.Equipment_ID
+GROUP BY eq.Equipment_ID, eq.Equipment_Name, eq.Equipment_Type
+ORDER BY Total_Repair_Cost DESC;
+\end{lstlisting}
+
+\textbf{Business Significance:}
+\begin{itemize}
+    \item[$\rightarrow$] Identifies rapidly depreciating assets on the factory floor.
+    \item[$\rightarrow$] Calculates the Total Cost of Ownership (TCO) for heavy machinery.
+    \item[$\rightarrow$] Guides capital expenditure decisions (e.g., deciding whether to replace a machine vs. continually repairing it).
+\end{itemize}
+
+\textbf{Query Output:}
+\begin{figure}[h!]
+    \centering
+   \includegraphics[width=0.9\textwidth]{4.png}
+    \caption{Output: Equipment Repair Cost Analysis}
+\end{figure}
+\vspace{1cm}
+
+% ---------------------------------------------------------
+% QUERY 5
+% ---------------------------------------------------------
+\newpage
+\subsection*{5. The Efficiency Trap: "Which production stages take the longest time to finish?"}
+
+\textbf{Relational Algebra:}
+\vspace{0.2cm}\\
+\noindent\fbox{%
+\begin{minipage}{0.95\textwidth}
+\begin{equation*}
+\begin{split}
+    & \gamma_{\text{Process\_Stage, COUNT(Log\_ID), AVG(End\_Time - Start\_Time)}} \\
+    & \quad (\text{Production\_Log})
+\end{split}
+\end{equation*}
+\end{minipage}}
+\vspace{0.2cm}
+
+\begin{lstlisting}
+SELECT 
+    Process_Stage,
+    COUNT(Log_ID) AS Total_Runs_Logged,
+    AVG(End_Time - Start_Time) AS Average_Processing_Duration
+FROM Production_Log
+GROUP BY Process_Stage
+ORDER BY Average_Processing_Duration DESC;
+\end{lstlisting}
+
+\textbf{Business Significance:}
+\begin{itemize}
+    \item[$\rightarrow$] Highlights operational bottlenecks within the manufacturing pipeline.
+    \item[$\rightarrow$] Assists plant managers in optimizing employee shift scheduling around long processes.
+    \item[$\rightarrow$] Sets baseline performance metrics for future factory automation upgrades.
+\end{itemize}
+
+\textbf{Query Output:}
+\begin{figure}[h!]
+    \centering
+   \includegraphics[width=0.9\textwidth]{5.png}
+    \caption{Output: Manufacturing Stage Durations}
+\end{figure}
+\vspace{1cm}
+
+% ---------------------------------------------------------
+% QUERY 6
+% ---------------------------------------------------------
+\newpage
+\subsection*{6. The Compliance Drill: "Show me all active audit trail evidence logs."}
+
+\textbf{Relational Algebra:}
+\vspace{0.2cm}\\
+\noindent\fbox{%
+\begin{minipage}{0.95\textwidth}
+\begin{equation*}
+\begin{split}
+    & \tau_{\text{Change\_Date} \downarrow} \Big( \pi_{\text{Date, Report\_ID, Action\_Type, Old\_Result, New\_Result, User}} \\
+    & \quad (\text{QC\_Audit\_Log}) \Big)
+\end{split}
+\end{equation*}
+\end{minipage}}
+\vspace{0.2cm}
+
+\begin{lstlisting}
+SELECT 
+    Change_Date,
+    Report_ID,
+    Action_Type,
+    Old_Result AS Before_Change,
+    New_Result AS After_Change,
+    Changed_By AS Database_User
+FROM QC_Audit_Log
+ORDER BY Change_Date DESC;
+\end{lstlisting}
+
+\textbf{Business Significance:}
+\begin{itemize}
+    \item[$\rightarrow$] Satisfies the strict regulatory requirements of FDA 21 CFR Part 11.
+    \item[$\rightarrow$] Acts as a tamper-evident security layer against unauthorized data manipulation.
+    \item[$\rightarrow$] Provides irrefutable digital evidence during surprise government safety inspections.
+\end{itemize}
+
+\textbf{Query Output:}
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.9\textwidth]{6.png}
+    \caption{Output: Quality Control Shadow Ledger}
+\end{figure}
+\vspace{1cm}
+
+% ---------------------------------------------------------
+% QUERY 7
+% ---------------------------------------------------------
+\newpage
+\subsection*{7. The Financial Leak Tracker: "What are our total financial losses from recalled batches?"}
+
+\textbf{Relational Algebra:}
+\vspace{0.2cm}\\
+\noindent\fbox{%
+\begin{minipage}{0.95\textwidth}
+\begin{equation*}
+\begin{split}
+    & \tau_{\text{Date\_Initiated} \downarrow} \Big( \pi_{\text{Recall\_ID, Date, Batch\_No, Name, Qty\_Recalled, Reason}} \\
+    & \quad (\text{Product\_Recall} \bowtie \text{Batch} \bowtie \text{Product\_Master}) \Big)
+\end{split}
+\end{equation*}
+\end{minipage}}
+\vspace{0.2cm}
+
+\begin{lstlisting}
+SELECT 
+    pr.Recall_ID,
+    pr.Date_Initiated,
+    pr.Batch_No,
+    pm.Product_Name,
+    pr.Qty_Recalled AS Units_Destroyed,
+    pr.Reason
+FROM Product_Recall pr
+JOIN Batch b ON pr.Batch_No = b.Batch_No
+JOIN Product_Master pm ON b.Product_ID = pm.Product_ID
+ORDER BY pr.Date_Initiated DESC;
+\end{lstlisting}
+
+\textbf{Business Significance:}
+\begin{itemize}
+    \item[$\rightarrow$] Quantifies enterprise risk and financial exposure resulting from catastrophic medicine failures.
+    \item[$\rightarrow$] Tracks recurring safety issues to determine if specific formulas need to be entirely discontinued.
+    \item[$\rightarrow$] Provides absolute transparency for executive stakeholders and corporate reporting.
+\end{itemize}
+
+\textbf{Query Output:}
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.9\textwidth]{7.png}
+    \caption{Output: Recalled Products Registry}
+\end{figure}
+\vspace{1cm}
+
+% ---------------------------------------------------------
+% QUERY 8
+% ---------------------------------------------------------
+\newpage
+\subsection*{8. The Warehouse Audit: "What is our current storage profile for hazardous chemicals?"}
+
+\textbf{Relational Algebra:}
+\vspace{0.2cm}\\
+\noindent\fbox{%
+\begin{minipage}{0.95\textwidth}
+\begin{equation*}
+\begin{split}
+    & \tau_{\text{Stock} \downarrow} \Big( \pi_{\text{Item\_ID, Name, Stock, UOM, Storage, isHazardous, isInflammable}} \\
+    & \quad \big( \sigma_{\text{isHazardous}=\text{T} \lor \text{isInflammable}=\text{T}} (\text{Warehouse} \bowtie \text{Material\_Master}) \big) \Big)
+\end{split}
+\end{equation*}
+\end{minipage}}
+\vspace{0.2cm}
+
+
+\begin{lstlisting}
+SELECT 
+    w.Item_ID,
+    mm.Material_Name,
+    w.Stock AS Current_Stock,
+    mm.UOM,
+    mm.Storage_Condition,
+    mm.isHazardous,
+    mm.isInflammable
+FROM Warehouse w
+JOIN Material_Master mm ON w.Material_ID = mm.Material_ID
+WHERE mm.isHazardous = TRUE OR mm.isInflammable = TRUE
+ORDER BY w.Stock DESC;
+\end{lstlisting}
+
+\textbf{Business Significance:}
+\begin{itemize}
+    \item[$\rightarrow$] Ensures total compliance with OSHA and environmental safety storage regulations.
+    \item[$\rightarrow$] Prevents the dangerous physical stockpiling of highly volatile chemicals in a single zone.
+    \item[$\rightarrow$] Instantly alerts warehouse managers to high-risk storage sectors requiring specialized climate control.
+\end{itemize}
+
+\textbf{Query Output:}
+\begin{figure}[h!]
+    \centering
+   \includegraphics[width=0.9\textwidth]{8.png}
+    \caption{Output: Hazardous Material Inventory}
+\end{figure}
+\vspace{1cm}
+
+\newpage
+\section{Active Database Automation: Triggers}
+
+% --- TRIGGER 1 ---
+\subsection{1. The Warehouse Automator (\texttt{trg\_deduct\_stock\_on\_dispense})}
+\textbf{Execution Phase:} \texttt{AFTER INSERT} on \texttt{Material\_Dispensing}
+
+\textbf{Why is this important?}
+\begin{itemize}
+    \item[$\rightarrow$] \textbf{Zero Manual Math:} The moment a factory worker logs that they have taken raw materials for a medicine batch, this trigger automatically does the subtraction in the background. It instantly updates the physical warehouse stock without needing a human to remember to do it.
+    \item[$\rightarrow$] \textbf{The Negative Stock Fail-Safe:} It acts as a hard security guard. If someone accidentally types an extra zero and tries to take out more stock than what actually exists on the shelf, the trigger catches it and \textbf{blocks the transaction entirely}. This guarantees the database never shows impossible "negative" inventory.
+\end{itemize}
+
+\begin{lstlisting}
+-- 
+-- FUNCTION: Automate Warehouse Stock Deduction
+-- DESCRIPTION: When a batch takes material, deduct it from the warehouse.
+--              If there isn't enough stock, block the transaction.
+-- 
+CREATE OR REPLACE FUNCTION automate_warehouse_stock()
+RETURNS TRIGGER 
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_current_stock NUMERIC(10);
+BEGIN
+    -- 1. Find out how much stock we currently have for this specific item
+    SELECT Stock INTO v_current_stock 
+    FROM Warehouse 
+    WHERE Item_ID = NEW.Item_ID;
+
+    -- 2. Safety Check: Do we have enough stock to fulfill this request?
+    IF v_current_stock < NEW.Quantity_Issued THEN
+        RAISE EXCEPTION 'Transaction Blocked: Not enough stock! Item % only has % units left, but you tried to dispense %.', 
+                        NEW.Item_ID, v_current_stock, NEW.Quantity_Issued;
+    END IF;
+
+    -- 3. If we have enough stock, safely deduct it from the Warehouse
+    UPDATE Warehouse
+    SET Stock = Stock - NEW.Quantity_Issued
+    WHERE Item_ID = NEW.Item_ID;
+
+    -- 4. Allow the original INSERT into Material_Dispensing to finish
+    RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trg_deduct_stock_on_dispense
+AFTER INSERT ON Material_Dispensing
+FOR EACH ROW
+EXECUTE FUNCTION automate_warehouse_stock();
+\end{lstlisting}
+
+\textbf{Live Test Case (Triggering the Fail-Safe):}
+\begin{lstlisting}
+-- Attempting to dispense an impossible amount of material (999,999 units)
+INSERT INTO Material_Dispensing (Batch_No, Item_ID, Quantity_Issued) 
+VALUES (5001, 2, 999999);
+\end{lstlisting}
+
+\textbf{Test Output:}
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.9\textwidth]{11.png}
+    \caption{Output: Trigger blocking the negative stock transaction}
+\end{figure}
+\vspace{1cm}
+
+% --- TRIGGER 2 ---
+\newpage
+\subsection{2. The FDA Compliance Blocker (\texttt{trg\_prevent\_bad\_sales})}
+\textbf{Execution Phase:} \texttt{BEFORE INSERT} on \texttt{FG\_Transaction}
+
+\textbf{Why is this important?}
+\begin{itemize}
+    \item[$\rightarrow$] \textbf{The Ultimate Safety Net:} This trigger acts as the final gatekeeper before medicine leaves the factory. Whenever a hospital or distributor attempts to purchase a batch, the database automatically cross-references the official Quality Control lab results in real-time.
+    \item[$\rightarrow$] \textbf{Absolute Enforcement:} If a batch failed its lab test, or if it simply hasn't been tested yet, the trigger throws a hard exception. It makes it technologically impossible to sell toxic or unverified medicine, ensuring strict FDA compliance regardless of human error or frontend software bugs.
+\end{itemize}
+
+\begin{lstlisting}
+-- 
+-- FUNCTION: FDA Compliance Enforcer
+-- DESCRIPTION: Prevents the sale of any batch in FG_Transaction if it 
+--              failed Quality Control or hasn't been tested yet.
+-- 
+
+CREATE OR REPLACE FUNCTION enforce_quality_control()
+RETURNS TRIGGER 
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_qa_result VARCHAR(30);
+BEGIN
+    -- 1. Look up the official lab result for the batch they are trying to sell
+    SELECT Results INTO v_qa_result
+    FROM Product_Quality_Check
+    WHERE Batch_No = NEW.Batch_No;
+
+    -- 2. Safety Rule A: Has it been tested at all?
+    IF v_qa_result IS NULL THEN
+        RAISE EXCEPTION 'COMPLIANCE BLOCK: Batch % has not been tested by the QC Lab yet. Sale is illegal!', NEW.Batch_No;
+    END IF;
+
+    -- 3. Safety Rule B: Did it fail the test?
+    IF v_qa_result = 'FAILED' THEN
+        RAISE EXCEPTION 'SAFETY BLOCK: Batch % FAILED quality control. This batch must be quarantined, not sold!', NEW.Batch_No;
+    END IF;
+
+    -- 4. If it exists and didn't fail (i.e., 'PASSED'), allow the sale to proceed
+    RETURN NEW;
+END;
+$$;
+
+-- Bind the trigger to fire BEFORE the sale is finalized
+CREATE TRIGGER trg_prevent_bad_sales
+BEFORE INSERT ON FG_Transaction
+FOR EACH ROW
+EXECUTE FUNCTION enforce_quality_control();
+\end{lstlisting}
+
+\textbf{Live Test Case (Triggering the Compliance Block):}
+\begin{lstlisting}
+-- Attempt 1: Trying to sell Batch 5003 which FAILED its lab test
+INSERT INTO FG_Transaction (Invoice_No, Batch_No, Sale_Qty, Val) 
+VALUES (2020, 5003, 1000, 50000.00);
+
+-- Attempt 2: Trying to sell an unverified Batch 5000 (No lab records)
+INSERT INTO FG_Transaction (Invoice_No, Batch_No, Sale_Qty, Val) 
+VALUES (2020, 5000, 1000, 50000.00);
+
+-- Attempt 3: Selling a safe, PASSED batch successfully
+INSERT INTO FG_Transaction (Invoice_No, Batch_No, Sale_Qty, Val) 
+VALUES (2020, 5001, 1000, 50000.00);
+\end{lstlisting}
+
+\textbf{Test Outputs:}
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.9\textwidth]{12.png}
+    \caption{Output 1: FDA Trigger blocking the sale of a FAILED batch (Batch 5003)}
+\end{figure}
+\vspace{0.5cm}
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.9\textwidth]{13.png}
+    \caption{Output 2: FDA Trigger blocking the sale of an UNVERIFIED batch (Batch 5000)}
+\end{figure}
+\vspace{0.5cm}
+
+\begin{figure}[h!]
+    \centering
+ \includegraphics[width=0.9\textwidth]{14.png}
+    \caption{Output 3: Successful sale of a safe, PASSED batch (Batch 5001)}
+\end{figure}
+\vspace{1cm}
+
+
+% --- TRIGGER 3 ---
+\clearpage
+\subsection{3. The Timeline Enforcer (\texttt{trg\_strict\_batch\_dates})}
+\textbf{Execution Phase:} \texttt{BEFORE INSERT OR UPDATE} on \texttt{Batch}
+
+\textbf{Why is this important?}
+
+\begin{itemize}
+    \item[$\rightarrow$] \textbf{Preventing Time Travel:} It acts as a strict chronological safeguard. If a data-entry worker accidentally types the wrong year, or attempts to fraudulently forward-date a batch to extend its shelf life, the database \textbf{blocks the entry immediately}.
+    \item[$\rightarrow$] \textbf{Shelf-Life Compliance:} Distributors and hospitals will reject medicine that expires too quickly. This trigger mathematically guarantees that no medicine can even be registered in the system unless it possesses a \textbf{strict minimum of a 6-month viability window}, protecting the brand's supply chain standards.
+\end{itemize}
+
+\begin{lstlisting}
+-- 
+-- FUNCTION: Strict Batch Date Enforcer
+-- DESCRIPTION: Prevents setting manufacturing dates in the future, and 
+--              ensures a minimum 6-month shelf life.
+-- 
+
+CREATE OR REPLACE FUNCTION enforce_batch_dates()
+RETURNS TRIGGER 
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    -- Rule 1: Prevent "Time Travel" (Manufacturing in the future)
+    IF NEW.Mfg_Date > CURRENT_DATE THEN
+        RAISE EXCEPTION 'TIME TRAVEL DETECTED: You cannot set a Manufacturing Date (%) in the future!', NEW.Mfg_Date;
+    END IF;
+
+    -- Rule 2: Ensure minimum 6-month shelf life
+    -- (We add 6 months to the Mfg_Date and compare it to Exp_Date)
+    IF NEW.Exp_Date < (NEW.Mfg_Date + INTERVAL '6 months') THEN
+        RAISE EXCEPTION 'QUALITY BLOCK: The Expiry Date (%) must be at least 6 months after the Manufacturing Date (%).', NEW.Exp_Date, NEW.Mfg_Date;
+    END IF;
+
+    -- If both rules pass, allow the INSERT or UPDATE to finish
+    RETURN NEW;
+END;
+$$;
+
+-- Bind the trigger to fire BEFORE BOTH Inserts and Updates!
+CREATE TRIGGER trg_strict_batch_dates
+BEFORE INSERT OR UPDATE ON Batch
+FOR EACH ROW
+EXECUTE FUNCTION enforce_batch_dates();
+\end{lstlisting}
+
+\textbf{Live Test Cases (Triggering the Date Blocks):}
+\begin{lstlisting}
+-- Attempt 1: Triggering Rule 1 (Time Travel)
+UPDATE Batch  
+SET Mfg_Date = '2099-01-01' 
+WHERE Batch_No = 5001;
+
+-- Attempt 2: Triggering Rule 2 (Minimum 6-month shelf life failure)
+INSERT INTO Batch (Batch_No, Batch_Size, Mfg_Date, Exp_Date, Product_ID, Stock_Qty, UT_Q_A) 
+VALUES (9999, 10000, '2024-01-01', '2024-02-01', 'PRD001', 10000, 'UT');
+\end{lstlisting}
+
+\textbf{Test Outputs:}
+
+\begin{figure}[h!]
+    \centering
+    % Remove the '%' below once 15.png is uploaded
+    \includegraphics[width=0.9\textwidth]{15.png}
+    \caption{Output 1: Database rejecting a future Manufacturing Date}
+\end{figure}
+\vspace{0.5cm}
+
+\begin{figure}[h!]
+    \centering
+    % Remove the '%' below once 16.png is uploaded
+    \includegraphics[width=0.9\textwidth]{16.png}
+    \caption{Output 2: Database rejecting a batch with insufficient shelf life}
+\end{figure}
+\vspace{1cm}
+
+% --- TRIGGER 4 ---
+\clearpage
+\subsection{4. The Silent Auditor (\texttt{trg\_audit\_qc\_changes})}
+\textbf{Execution Phase:} \texttt{AFTER UPDATE OR DELETE} on \texttt{Product\_Quality\_Check}
+
+\textbf{Why is this important?}
+\begin{itemize}
+    \item[$\rightarrow$] \textbf{FDA 21 CFR Part 11 Compliance:} Federal regulations mandate that critical electronic pharmaceutical records cannot be altered or destroyed without generating a permanent, trackable digital paper trail. 
+    \item[$\rightarrow$] \textbf{Immutable Surveillance:} If an employee attempts to secretly change a failing lab grade to a passing one, or deletes a record entirely to hide a mistake, this trigger acts as a hidden security camera. It silently captures the original data, the tampered data, the exact action taken, and the database user's credentials, depositing them into a hidden vault (\texttt{QC\_Audit\_Log}) for forensic review.
+\end{itemize}
+
+\begin{lstlisting}
+-- 
+-- FUNCTION: The Silent Auditor
+-- DESCRIPTION: Tracks any modifications or deletions of Lab Results.
+--
+CREATE OR REPLACE FUNCTION track_qc_changes()
+RETURNS TRIGGER 
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    -- SCENARIO A: Someone is trying to UPDATE a lab result
+    IF TG_OP = 'UPDATE' THEN
+        -- If the result actually changed, log the evidence!
+        IF OLD.Results IS DISTINCT FROM NEW.Results THEN
+            INSERT INTO QC_Audit_Log (Report_ID, Action_Type, Old_Result, New_Result, Changed_By)
+            VALUES (OLD.Report_ID, 'UPDATE', OLD.Results, NEW.Results, CURRENT_USER);
+        END IF;
+        RETURN NEW;
+
+    -- SCENARIO B: Someone is trying to totally DELETE a lab record
+    ELSIF TG_OP = 'DELETE' THEN
+        INSERT INTO QC_Audit_Log (Report_ID, Action_Type, Old_Result, New_Result, Changed_By)
+        VALUES (OLD.Report_ID, 'DELETE', OLD.Results, 'RECORD DESTROYED', CURRENT_USER);
+        RETURN OLD;
+    END IF;
+END;
+$$;
+
+-- Bind the trigger to listen AFTER someone touches the QC table
+CREATE TRIGGER trg_audit_qc_changes
+AFTER UPDATE OR DELETE ON Product_Quality_Check
+FOR EACH ROW
+EXECUTE FUNCTION track_qc_changes();
+\end{lstlisting}
+
+\textbf{Live Test Cases (Triggering the Audit Trail):}
+\begin{lstlisting}
+-- Attempt 1: An employee secretly changes a FAILED test to PASSED
+UPDATE Product_Quality_Check 
+SET Results = 'PASSED' 
+WHERE Report_ID = 'PQC003';
+
+-- Attempt 2: An employee tries to destroy a record entirely
+DELETE FROM Product_Quality_Check 
+WHERE Report_ID = 'PQC005';
+
+-- Forensic Review: Checking the hidden audit ledger for evidence
+SELECT * FROM QC_Audit_Log;
+\end{lstlisting}
+
+\textbf{Test Output:}
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.9\textwidth]{17.png}
+    \caption{Output: The shadow ledger capturing the unauthorized data modifications and deletion}
+\end{figure}
+\vspace{1cm}
+
+% ==========================================
+% SECTION: DATABASE VIEWS
+% ==========================================
+\clearpage
+\section{Data Abstraction: Enterprise Views}
+In a highly normalized database, business intelligence (BI) tools and frontend dashboards often require data that spans multiple complex joins. To optimize performance and restrict direct access to core transactional tables, PharmaChain-DB utilizes native SQL Views. These act as secure, pre-compiled virtual tables that serve real-time analytics to specific factory departments.
+
+% --- VIEW 1 ---
+\subsection{1. Procurement Dashboard: Low Stock Alerts (\texttt{v\_inventory\_shortage})}
+
+\textbf{Why is this important?}
+\begin{itemize}
+    \item[$\rightarrow$] \textbf{Automated Supply Chain Triggers:} Supply chain managers do not have time to manually calculate the remaining stock of hundreds of chemicals. This view acts as a daily "To-Do List" for the purchasing team, instantly filtering out healthy stock and only showing materials in the danger zone.
+    \item[$\rightarrow$] \textbf{Preventing Factory Halts:} By calculating the exact difference between current stock and the defined \texttt{Reorder\_Level}, it tells the procurement team exactly how many units they need to buy to prevent a total manufacturing shutdown.
+    \item[$\rightarrow$] \textbf{Data Security:} It allows the purchasing department's software to see inventory deficits without ever granting them direct \texttt{UPDATE} or \texttt{DELETE} permissions on the sensitive \texttt{Warehouse} table.
+\end{itemize}
+
+\begin{lstlisting}[language=SQL]
+-- 
+-- VIEW: Procurement Dashboard (Low Stock Alert)
+-- DESCRIPTION: Instantly shows the purchasing team exactly which 
+--              materials have dropped below their safe reorder limit.
+-- 
+
+CREATE OR REPLACE VIEW v_inventory_shortage AS
+SELECT 
+    w.Item_ID,
+    m.Material_Name,
+    m.Material_Type,
+    w.Stock AS Current_Stock,
+    m.Reorder_Level AS Minimum_Required,
+    (m.Reorder_Level - w.Stock) AS Units_To_Order
+FROM Warehouse w
+JOIN Material_Master m ON w.Material_ID = m.Material_ID
+WHERE w.Stock <= m.Reorder_Level;
+\end{lstlisting}
+
+\textbf{Live Test Case (Viewing the Dashboard):}
+\begin{lstlisting}[language=SQL]
+-- The purchasing software executes this simple query every morning
+SELECT * FROM v_inventory_shortage;
+\end{lstlisting}
+
+\textbf{Test Output:}
+
+\begin{figure}[h!]
+    \centering
+ \includegraphics[width=0.9\textwidth]{18.png}
+    \caption{Output: The Procurement Dashboard highlighting urgent chemical shortages}
+\end{figure}
+\vspace{1cm}
+
+% --- VIEW 2 ---
+\newpage
+\subsection{2. FDA End-to-End Batch Traceability (\texttt{v\_fda\_batch\_traceability})}
+
+\textbf{Why is this important?}
+\begin{itemize}
+    \item[$\rightarrow$] \textbf{Instant Audit Readiness:} During an FDA or regulatory audit, inspectors demand the complete lifecycle of a medicine. This view instantly aggregates data across six different tables to show exactly when a pill was made, what raw chemicals were mixed into it, its final lab grade, and how much was sold.
+    \item[$\rightarrow$] \textbf{Surgical Product Recalls:} If a specific raw material supplier issues a contamination warning, this view allows executives to instantly identify every single finished medicine batch that contains that specific chemical, preventing a massive, uncoordinated market recall.
+    \item[$\rightarrow$] \textbf{Cross-Departmental Visibility:} It bridges the gap between Manufacturing, Quality Control, and Sales. Instead of writing complex, 7-table JOIN queries every time management needs a report, they can query this view like a simple spreadsheet.
+\end{itemize}
+
+\begin{lstlisting}[language=SQL]
+-- 
+
+-- VIEW: FDA End-to-End Batch Traceability
+-- DESCRIPTION: A complete lifecycle map of every batch, showing its 
+--              ingredients, QC status, and market sales.
+-- 
+CREATE OR REPLACE VIEW v_fda_batch_traceability AS
+SELECT 
+    B.Batch_No,
+    PM.Product_Name,
+    B.Mfg_Date,
+    B.Exp_Date,
+    COALESCE(QC.Results, 'UNTESTED') AS QC_Status,
+    STRING_AGG(DISTINCT MM.Material_Name, ', ') AS Raw_Materials_Used,
+    COALESCE(SUM(FGT.Sale_Qty), 0) AS Total_Sold_To_Market
+FROM Batch B
+JOIN Product_Master PM ON B.Product_ID = PM.Product_ID
+LEFT JOIN Product_Quality_Check QC ON B.Batch_No = QC.Batch_No
+LEFT JOIN Material_Dispensing MD ON B.Batch_No = MD.Batch_No
+LEFT JOIN Warehouse W ON MD.Item_ID = W.Item_ID
+LEFT JOIN Material_Master MM ON W.Material_ID = MM.Material_ID
+LEFT JOIN FG_Transaction FGT ON B.Batch_No = FGT.Batch_No
+GROUP BY 
+    B.Batch_No, 
+    PM.Product_Name, 
+    B.Mfg_Date, 
+    B.Exp_Date, 
+    QC.Results;
+\end{lstlisting}
+
+\textbf{Live Test Case (Viewing the Traceability Ledger):}
+\begin{lstlisting}[language=SQL]
+-- Quality Assurance executes this to generate a complete compliance report
+SELECT * FROM v_fda_batch_traceability;
+\end{lstlisting}
+
+\textbf{Test Output:}
+
+\begin{figure}[h!]
+    \centering
+   \includegraphics[width=0.9\textwidth]{19.png}
+    \caption{Output: The complete lifecycle and market trace of manufactured batches}
+\end{figure}
+\vspace{1cm}
+
+% --- VIEW 3 ---
+\clearpage
+\subsection{3. Expiry Risk \& Inventory Liability Dashboard (\texttt{v\_inventory\_expiry\_risk})}
+
+\textbf{Why is this important?}
+\begin{itemize}
+    \item[$\rightarrow$] \textbf{Financial Liability Mitigation:} Pharmaceutical products have strict shelf lives. This view acts as an early warning system, allowing the sales team to heavily discount or push batches that are approaching expiration before they become a total financial loss.
+    \item[$\rightarrow$] \textbf{Automated Risk Categorization:} Instead of relying on employees to manually calculate dates, the database natively categorizes inventory into actionable status codes (\texttt{SAFE}, \texttt{WARNING}, \texttt{CRITICAL}, \texttt{EXPIRED}) based on real-time chronological math.
+    \item[$\rightarrow$] \textbf{Accurate "Floor Stock" Tracking:} By programmatically subtracting all completed sales from the initial manufactured batch size, executives know exactly how many units are physically sitting unsold in the warehouse at any given second.
+\end{itemize}
+
+\begin{lstlisting}[language=SQL]
+-- 
+-- VIEW: Expiry Risk & Inventory Liability Dashboard
+-- DESCRIPTION: Tracks unsold finished goods, calculates days until 
+--              expiry, and flags high-risk inventory using status codes.
+-- 
+
+CREATE OR REPLACE VIEW v_inventory_expiry_risk AS
+SELECT 
+    B.Batch_No,
+    PM.Product_Name,
+    B.Exp_Date,
+    (B.Exp_Date - CURRENT_DATE) AS Days_Remaining,
+    
+    -- Professional Status Codes
+    CASE 
+        WHEN (B.Exp_Date - CURRENT_DATE) < 0 THEN 'EXPIRED - DO NOT SELL'
+        WHEN (B.Exp_Date - CURRENT_DATE) <= 30 THEN 'CRITICAL - UNDER 30 DAYS'
+        WHEN (B.Exp_Date - CURRENT_DATE) <= 90 THEN 'WARNING - UNDER 90 DAYS'
+        ELSE 'SAFE'
+    END AS Risk_Status,
+    
+    B.Stock_Qty AS Manufactured_Qty,
+    COALESCE(SUM(FGT.Sale_Qty), 0) AS Total_Sold_Qty,
+    
+    -- Calculate exactly how many units are sitting unsold on the shelf
+    (B.Stock_Qty - COALESCE(SUM(FGT.Sale_Qty), 0)) AS Unsold_Inventory
+
+FROM Batch B
+JOIN Product_Master PM ON B.Product_ID = PM.Product_ID
+LEFT JOIN FG_Transaction FGT ON B.Batch_No = FGT.Batch_No
+
+GROUP BY 
+    B.Batch_No, 
+    PM.Product_Name, 
+    B.Exp_Date, 
+    B.Stock_Qty
+
+-- ONLY show batches where we still have unsold inventory
+HAVING (B.Stock_Qty - COALESCE(SUM(FGT.Sale_Qty), 0)) > 0
+
+-- Sort the most dangerous (expiring soonest) to the top
+ORDER BY Days_Remaining ASC;
+\end{lstlisting}
+
+\textbf{Live Test Cases (Setting up Expiry Risks \& Viewing the Dashboard):}
+\begin{lstlisting}[language=SQL]
+-- 1. Test "CRITICAL" (Set Expiry to 15 days from today)
+UPDATE Batch 
+SET Exp_Date = CURRENT_DATE + INTERVAL '15 days' 
+WHERE Batch_No = 5001;
+
+-- 2. Test "WARNING" (Set Expiry to 60 days from today)
+UPDATE Batch 
+SET Exp_Date = CURRENT_DATE + INTERVAL '60 days' 
+WHERE Batch_No = 5002;
+
+-- 3. Test "SAFE" (Set Expiry to 1 year from today)
+UPDATE Batch 
+SET Exp_Date = CURRENT_DATE + INTERVAL '1 year' 
+WHERE Batch_No = 5004;
+
+-- Generate the Expiry Risk Report
+SELECT * FROM v_inventory_expiry_risk;
+\end{lstlisting}
+
+\textbf{Test Output:}
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.9\textwidth]{20.png}
+    \caption{Output: The Expiry Risk Dashboard flagging batches nearing expiration}
+\end{figure}
+\vspace{1cm}
+
+% ==========================================
+% SECTION: STORED PROCEDURES
+% ==========================================
+\clearpage
+\section{Complex Transactions: Stored Procedures}
+
+\subsection*{Architectural Concept: Stored Procedures vs. Triggers}
+While both Stored Procedures and Triggers execute business logic on the database server, their architectural roles are fundamentally different:
+\begin{itemize}
+    \item \textbf{Triggers are Reactive (Event-Driven):} A trigger acts as a hidden background guard. It fires automatically in response to a DML event (\texttt{INSERT}, \texttt{UPDATE}, \texttt{DELETE}). The user or application does not explicitly call a trigger.
+    \item \textbf{Stored Procedures are Proactive (On-Demand):} A stored procedure is a pre-compiled script called manually by an application or user via the \texttt{CALL} command. They are designed to group multiple, complex database operations into a single \textbf{atomic transaction}. If any part of the procedure fails, the entire transaction rolls back, preventing partial data updates.
+\end{itemize}
+
+% --- STORED PROCEDURE 1 ---
+\subsection{1. The Emergency Quarantine Protocol (\texttt{execute\_product\_recall})}
+
+\textbf{Why is this important?}
+\begin{itemize}
+    \item[$\rightarrow$] \textbf{Rapid Crisis Response:} During a catastrophic medicine failure or FDA mandate, executives do not have time to manually update multiple tables. This procedure allows a manager to execute a total factory quarantine with a single line of code.
+    \item[$\rightarrow$] \textbf{Atomic Multi-Table Transactions:} This script executes a highly orchestrated sequence: it checks if the batch exists, verifies physical stock, logs the legal recall event, zeroes out the physical warehouse inventory, and overwrites the Quality Control lab records. Grouping this into a procedure ensures that all steps happen together, or none happen at all.
+    \item[$\rightarrow$] \textbf{Frontend Abstraction:} The application developers do not need to know the complex relational schema of the database. They simply pass the \texttt{Recall\_ID}, \texttt{Batch\_No}, and \texttt{Reason} to the procedure, and the database handles the heavy lifting safely.
+\end{itemize}
+
+\begin{lstlisting}[language=SQL]
+-- 
+-- PROCEDURE: Execute Emergency Product Recall (Tailored)
+-- DESCRIPTION: Integrates exactly with the user's Product_Recall table,
+--              enforcing all custom constraints and VARCHAR keys.
+-- 
+
+CREATE OR REPLACE PROCEDURE execute_product_recall(
+    p_recall_id VARCHAR(20),  
+    p_batch_no NUMERIC,
+    p_reason VARCHAR(255)     
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_unsold_qty NUMERIC;
+BEGIN
+    -- 1. Find out exactly how many units are currently in the warehouse
+    SELECT Stock_Qty INTO v_unsold_qty 
+    FROM Batch 
+    WHERE Batch_No = p_batch_no;
+
+    -- Safety Check A: Does this batch exist?
+    IF v_unsold_qty IS NULL THEN
+        RAISE EXCEPTION 'RECALL FAILED: Batch % does not exist in the system.', p_batch_no;
+    END IF;
+
+    -- Safety Check B: Satisfy your CHECK (Qty_Recalled > 0) constraint
+    IF v_unsold_qty <= 0 THEN
+         RAISE EXCEPTION 'RECALL FAILED: Batch % has 0 stock in the warehouse. Nothing left to quarantine!', p_batch_no;
+    END IF;
+
+    -- 2. Log the event into YOUR exact table
+    INSERT INTO Product_Recall (Recall_ID, Batch_No, Date_Initiated, Reason, Qty_Recalled)
+    VALUES (p_recall_id, p_batch_no, CURRENT_DATE, p_reason, v_unsold_qty);
+
+    -- 3. Zero out the warehouse stock
+    UPDATE Batch 
+    SET Stock_Qty = 0 
+    WHERE Batch_No = p_batch_no;
+
+    -- 4. Overwrite the Quality Control lab result to quarantine the batch
+    UPDATE Product_Quality_Check 
+    SET Results = 'RECALLED' 
+    WHERE Batch_No = p_batch_no;
+
+END;
+$$;
+\end{lstlisting}
+
+\textbf{Live Test Case (Executing a Corporate Recall):}
+\begin{lstlisting}[language=SQL]
+-- Execute the emergency procedure for Batch 5004
+CALL execute_product_recall(
+    'REC-5004-A', 
+    5004, 
+    'CRITICAL: Stability test failed at 6 months. Active ingredient degraded.'
+);
+
+-- View the official registry to confirm the transaction succeeded
+SELECT * FROM Product_Recall;
+\end{lstlisting}
+
+\textbf{Test Output:}
+
+\begin{figure}[h!]
+    \centering
+ \includegraphics[width=0.9\textwidth]{21.png}
+    \caption{Output: Successful execution of the Emergency Product Recall stored procedure}
+\end{figure}
+\vspace{1cm}
+
+% ==========================================
+% SECTION: BCNF VERIFICATION TABLE
+% ==========================================
+\newpage
+\section{BCNF Verification Table}
+
+The following table demonstrates the mathematical verification that every relation in the PharmaChain-DB architecture satisfies Boyce-Codd Normal Form (BCNF). For each entity, the minimal functional dependency (FD) set is identified. Because every determinant in the architecture is a Candidate Key (or a strict superset thereof), no partial or transitive dependencies exist, ensuring absolute data integrity.
+
+\vspace{0.5cm}
+
+\begin{longtable}{|p{0.18\textwidth}|p{0.35\textwidth}|p{0.18\textwidth}|p{0.2\textwidth}|}
+\caption{BCNF Verification Table: Pharmaceutic Industry Management System} \label{tab:bcnf_proofs} \\
+\hline
+\textbf{Relation} & \textbf{Minimal FD Set} & \textbf{Candidate Key} & \textbf{BCNF Proof} \\ \hline
+\endfirsthead
+
+\multicolumn{4}{c}%
+{\tablename\ \thetable\ -- \textit{Continued from previous page}} \\
+\hline
+\textbf{Relation} & \textbf{Minimal FD Set} & \textbf{Candidate Key} & \textbf{BCNF Proof} \\ \hline
+\endhead
+
+\hline \multicolumn{4}{r}{\textit{Continued on next page}} \\
+\endfoot
+
+\hline
+\endlastfoot
+
+% --- DATA ROWS START HERE ---
+
+Material\_Master & 
+Material\_ID $\rightarrow$ \{Material\_Name, Material\_Type, Storage\_Condition, Shelf\_Life, Therapeutic\_Category, Material\_State, isHazardous, isInflammable, UOM, Reorder\_Level\} & 
+Material\_ID & 
+The only FD is of the form $X \rightarrow Y$. Since Material\_ID is the Candidate Key, it is a superkey. \\ \hline
+
+Account\_Master & 
+Account\_No $\rightarrow$ \{Account\_Name, Phone\_No, Address, Account\_Type\} & 
+Account\_No & 
+All FDs are of the form Account\_No $\rightarrow$ Y. Account\_No is the Candidate Key and thus a superkey. \\ \hline
+
+Employee\_Master & 
+Emp\_ID $\rightarrow$ \{Emp\_Name, Department, Role, Hire\_Date\} & 
+Emp\_ID & 
+The only FD is Emp\_ID $\rightarrow$ Y. The LHS is the Candidate Key and thus a superkey. \\ \hline
+
+Equipment\_Master & 
+Equipment\_ID $\rightarrow$ \{Equipment\_Name, Equipment\_Type, Last\_Calibration\_Date, Status\} & 
+Equipment\_ID & 
+The only FD is Equipment\_ID $\rightarrow$ Y. The LHS is the Candidate Key and thus a superkey. \\ \hline
+
+Product\_Master & 
+Product\_ID $\rightarrow$ \{Product\_Name, Generic\_Name, Product\_Type, Packing\_Type, Packing\_Size, SalableorSample, GenericorBranded\} & 
+Product\_ID & 
+The only FD is Product\_ID $\rightarrow$ Y. The LHS is the Candidate Key and thus a superkey. \\ \hline
+
+Transactions & 
+Invoice\_No $\rightarrow$ \{Transaction\_Date, Currency, Transaction\_Type, Paid\_Received, Account\_No, Total\_Value\} & 
+Invoice\_No & 
+The only FD is Invoice\_No $\rightarrow$ Y. The LHS is the Candidate Key and thus a superkey. \\ \hline
+
+Supplier\_Contract & 
+Contract\_ID $\rightarrow$ \{Account\_No, Material\_ID, Agreed\_Price, Valid\_Until\} & 
+Contract\_ID & 
+All FDs are of the form Contract\_ID $\rightarrow$ Y. Contract\_ID is the Candidate Key and thus a superkey. \\ \hline
+
+Warehouse & 
+Item\_ID $\rightarrow$ \{Material\_ID, Invoice\_No, UT\_Q\_A, Stock\} & 
+Item\_ID & 
+The only FD is Item\_ID $\rightarrow$ Y. Item\_ID is the Candidate Key and thus a superkey. \\ \hline
+
+RM\_Transaction & 
+\{Invoice\_No, Item\_ID\} $\rightarrow$ \{RM\_Qty, Val\} & 
+\{Invoice\_No, Item\_ID\} & 
+All FDs are of the form \{Invoice\_No, Item\_ID\} $\rightarrow$ Y. The LHS is the Candidate Key and thus a superkey. \\ \hline
+
+Material\_Quality \newline \_Check & 
+Report\_ID $\rightarrow$ \{Item\_ID, Analysis\_Date, Analyst\_Name, Sample\_Size, Test, Limits, Results, Emp\_ID\} & 
+Report\_ID & 
+The only FD is Report\_ID $\rightarrow$ Y. Report\_ID is the Candidate Key and thus a superkey. \\ \hline
+
+Formula\_Master & 
+\{Product\_ID, Material\_ID\} $\rightarrow$ \{Weight\_per\_tablet\} & 
+\{Product\_ID, Material\_ID\} & 
+The only FD is \{Product\_ID, Material\_ID\} $\rightarrow$ Y. The LHS is the Candidate Key and thus a superkey. \\ \hline
+
+Batch & 
+Batch\_No $\rightarrow$ \{Batch\_Size, Mfg\_Date, Exp\_Date, Product\_ID, Stock\_Qty, UT\_Q\_A, Yield\_Percentage\} & 
+Batch\_No & 
+The only FDs are of the form Batch\_No $\rightarrow$ Y. Batch\_No is the Candidate Key and thus a superkey. \\ \hline
+
+Material \newline \_Dispensing & 
+\{Batch\_No, Item\_ID\} $\rightarrow$ \{Quantity\_Issued\} & 
+\{Batch\_No, Item\_ID\} & 
+The only FD is \{Batch\_No, Item\_ID\} $\rightarrow$ Y. The LHS is the Candidate Key and thus a superkey. \\ \hline
+
+Production\_Log & 
+Log\_ID $\rightarrow$ \{Batch\_No, Equipment\_ID, Emp\_ID, Process\_Stage, Start\_Time, End\_Time\} & 
+Log\_ID & 
+The only FD is Log\_ID $\rightarrow$ Y. Log\_ID is the Candidate Key and thus a superkey. \\ \hline
+
+Product\_Quality \newline \_Check & 
+Report\_ID $\rightarrow$ \{Batch\_No, Analysis\_Date, Analyst\_Name, Sample\_Size, Process\_State, Test, Limits, Results, Emp\_ID\} & 
+Report\_ID & 
+The only FD is Report\_ID $\rightarrow$ Y. Report\_ID is the Candidate Key and thus a superkey. \\ \hline
+
+FG\_Transaction & 
+\{Invoice\_No, Batch\_No\} $\rightarrow$ \{Sale\_Qty, Val\} & 
+\{Invoice\_No, Batch\_No\} & 
+All FDs are of the form \{Invoice\_No, Batch\_No\} $\rightarrow$ Y. The LHS is the Candidate Key and thus a superkey. \\ \hline
+
+Product\_Recall & 
+Recall\_ID $\rightarrow$ \{Batch\_No, Date\_Initiated, Reason, Qty\_Recalled\} & 
+Recall\_ID & 
+The only FD is Recall\_ID $\rightarrow$ Y. The LHS is the Candidate Key and thus a superkey. \\ \hline
+
+Maintenance\_Log & 
+Maintenance\_ID $\rightarrow$ \{Equipment\_ID, Emp\_ID, Maintenance\_Date, Cost\} & 
+Maintenance\_ID & 
+The only FD is Maintenance\_ID $\rightarrow$ Y. The LHS is the Candidate Key and thus a superkey. \\ \hline
+
+QC\_Audit\_Log & 
+Audit\_ID $\rightarrow$ \{Report\_ID, Action\_Type, Old\_Result, New\_Result, Changed\_By, Change\_Date\} & 
+Audit\_ID & 
+The only FD is Audit\_ID $\rightarrow$ Y. The LHS is the Candidate Key and thus a superkey. \\ \hline
+
+\end{longtable}
+
+% ==========================================
+% SECTION: FUTURE SCOPE
+% ==========================================
+\clearpage
+\section{Future Scope and Next Steps}
+While the current PharmaChain-DB architecture successfully achieves strict normalization and data integrity, a database must evolve as the company grows. The following practical database improvements outline our next steps for making the system faster, safer, and easier to connect to other software.
+
+\vspace{0.5cm}
+
+\subsection*{1. Automated Email and SMS Alerts}
+\begin{itemize}
+    \item[$\rightarrow$] \textbf{Active Notifications:} Right now, employees have to manually check the database views to see if raw materials are running low. 
+    \item[$\rightarrow$] \textbf{Database Triggers to Email:} In the future, we can configure the database (using tools like \texttt{pg\_notify}) to automatically send an email or text message to the purchasing manager the exact second a chemical drops below its safe reorder level.
+\end{itemize}
+
+\subsection*{2. Data Archiving for Faster Performance}
+\begin{itemize}
+    \item[$\rightarrow$] \textbf{Managing Database Growth:} After five or ten years, tables like \texttt{Production\_Log} and \texttt{Transactions} will contain millions of rows, which can slow down daily queries.
+    \item[$\rightarrow$] \textbf{Historical Tables:} We plan to build automated archiving scripts that move very old, completed medicine batches into separate "History" tables. This keeps the main active tables small and lightning-fast, while still legally saving the old data.
+\end{itemize}
+
+\subsection*{3. Connecting to Web and Mobile Apps (API Integration)}
+\begin{itemize}
+    \item[$\rightarrow$] \textbf{Beyond SQL Queries:} Currently, users interact with the data by running SQL scripts directly.
+    \item[$\rightarrow$] \textbf{Building a REST API:} The next step is to wrap the database in a secure API. This will allow frontend web developers to easily build a simple website or mobile app where factory workers can just tap buttons on a screen to insert data, rather than knowing any code.
+\end{itemize}
+
+\subsection*{4. Materialized Views for Heavy Reports}
+\begin{itemize}
+    \item[$\rightarrow$] \textbf{Speeding Up Dashboards:} Our \texttt{v\_fda\_batch\_traceability} view joins seven different tables together. If executives run this report multiple times a day on a massive database, it could heavily tax the server's CPU.
+    \item[$\rightarrow$] \textbf{Pre-saving the Math:} We can upgrade standard views into "Materialized Views." This means the database will pre-calculate the heavy math overnight and save the results, so when the boss asks for the report in the morning, it loads instantly.
+\end{itemize}
+
+\subsection*{5. Automated Backups and Disaster Recovery}
+\begin{itemize}
+    \item[$\rightarrow$] \textbf{Protecting the Data:} If the factory's main server loses power or a hard drive crashes, years of pharmaceutical records could be lost.
+    \item[$\rightarrow$] \textbf{Nightly Snapshots:} We will implement automated database cron jobs (scheduled tasks) that safely copy the entire database every night and send the backup file to a secure, off-site location so it can always be restored.
+\end{itemize}
+
+
+\end{document}

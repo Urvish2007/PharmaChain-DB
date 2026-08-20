@@ -1,0 +1,74 @@
+name: pharmachain
+
+services:
+  postgres:
+    # pgvector/pgvector, not plain postgres: the vector store (used by the Spring AI compliance
+    # copilot) needs the pgvector extension, which the stock Postgres image doesn't ship.
+    image: pgvector/pgvector:pg16
+    container_name: pharmachain-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-pharmachain}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - pharmachain-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-pharmachain}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # The app itself. Doesn't run the DB schema scripts for you - load db/01_schema_and_data.sql
+  # and db/02_security_schema.sql against the `postgres` service the same way the README's
+  # local-dev instructions describe, just pointed at this container instead.
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pharmachain-app
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-pharmachain}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      JWT_SECRET: ${JWT_SECRET:-this-is-a-local-development-only-secret-change-it-before-deploying}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      # Assumes Ollama runs on your HOST machine (the default local-dev setup - see README),
+      # not in a container. host.docker.internal reaches the host from inside a container;
+      # Docker Desktop (Mac/Windows) resolves this natively, Linux needs the extra_hosts entry
+      # below. If you use the optional `ollama` service instead (--profile with-ai), override
+      # this to http://ollama:11434.
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      INGEST_COMPLIANCE_DOCS: ${INGEST_COMPLIANCE_DOCS:-true}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "${APP_PORT:-8080}:8080"
+
+  # Optional - containerizes Ollama instead of requiring a host install. Off by default; opt in
+  # with `docker compose --profile with-ai up`. After it's up for the first time, pull the
+  # embedding model once (persisted in the ollama-data volume after that):
+  #   docker compose exec ollama ollama pull nomic-embed-text
+  # Remember to also set OLLAMA_BASE_URL=http://ollama:11434 (see `app`'s env above) when using
+  # this profile, since "host.docker.internal" won't resolve to this container.
+  ollama:
+    image: ollama/ollama:latest
+    container_name: pharmachain-ollama
+    restart: unless-stopped
+    profiles: ["with-ai"]
+    ports:
+      - "${OLLAMA_PORT:-11434}:11434"
+    volumes:
+      - pharmachain-ollama:/root/.ollama
+
+volumes:
+  pharmachain-data:
+  pharmachain-ollama:

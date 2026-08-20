@@ -1,0 +1,96 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # Compiles and runs the full test suite, including BusinessRuleIntegrationTest, which boots a
+  # real pgvector/pgvector:pg16 container via Testcontainers. GitHub-hosted ubuntu-latest runners
+  # ship a Docker daemon natively, so this needs no extra dind setup - it's also, in practice,
+  # the first place this whole test suite actually gets to run for real (no sandboxed AI coding
+  # session had Docker or Maven Central access to run it before now).
+  build-and-test:
+    name: Build & test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Build and run tests
+        run: mvn -B clean verify
+
+      - name: Upload surefire reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-reports
+          path: target/surefire-reports/
+          retention-days: 7
+
+  # Builds the runtime image from the Dockerfile and pushes it to GHCR. Only runs after tests
+  # pass, and only for pushes to main (not PRs, and not just because build-and-test ran) -
+  # matches the "build -> test -> image push -> deploy" order from the project plan.
+  build-and-push-image:
+    name: Build & push image
+    needs: build-and-test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.image.outputs.name }}
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Compute image name
+        id: image
+        # GHCR requires a lowercase image name; github.repository can have mixed case
+        # (matches your GitHub username/org and repo name exactly).
+        run: echo "name=ghcr.io/$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ steps.image.outputs.name }}:latest
+            ${{ steps.image.outputs.name }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # Optional and off by default - this job no-ops unless you add a RENDER_DEPLOY_HOOK_URL repo
+  # secret (Settings > Secrets and variables > Actions > New repository secret). Render's deploy
+  # hook is just a webhook URL from your service's dashboard (Settings > Deploy Hook); POSTing to
+  # it redeploys the just-pushed image. Using Railway or Fly.io instead? Swap this step for
+  # their CLI/API equivalent - the job structure (needs the image pushed first) stays the same.
+  deploy:
+    name: Deploy (optional)
+    needs: build-and-push-image
+    if: ${{ needs.build-and-push-image.result == 'success' && secrets.RENDER_DEPLOY_HOOK_URL != '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Render deploy
+        run: curl -fsS -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"

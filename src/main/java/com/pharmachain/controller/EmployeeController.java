@@ -31,12 +31,14 @@ public class EmployeeController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     @ResponseStatus(HttpStatus.CREATED)
     public EmployeeMaster create(@Valid @RequestBody EmployeeMaster employee) {
         return service.create(employee);
     }
 
     @PutMapping("/{empId}")
+    @PreAuthorize("hasRole('ADMIN')")
     public EmployeeMaster update(@PathVariable String empId, @Valid @RequestBody EmployeeMaster employee) {
         return service.update(empId, employee);
     }

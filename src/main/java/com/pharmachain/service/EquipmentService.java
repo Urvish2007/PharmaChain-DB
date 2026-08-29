@@ -1,6 +1,7 @@
 package com.pharmachain.service;
 
 import com.pharmachain.entity.EquipmentMaster;
+import com.pharmachain.exception.BusinessRuleViolationException;
 import com.pharmachain.exception.ResourceNotFoundException;
 import com.pharmachain.repository.EquipmentMasterRepository;
 import lombok.RequiredArgsConstructor;
@@ -25,8 +26,13 @@ public class EquipmentService {
                 .orElseThrow(() -> ResourceNotFoundException.forId("Equipment", equipmentId));
     }
 
+    /** See MaterialService#create for why this existence check exists - save() would otherwise merge() on a duplicate id and silently overwrite the existing equipment instead of failing. */
     @Transactional
     public EquipmentMaster create(EquipmentMaster equipment) {
+        if (repository.existsById(equipment.getEquipmentId())) {
+            throw new BusinessRuleViolationException(
+                    "Equipment '" + equipment.getEquipmentId() + "' already exists");
+        }
         return repository.save(equipment);
     }
 

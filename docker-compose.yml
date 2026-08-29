@@ -51,7 +51,7 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     ports:
-      - "${APP_PORT:-8080}:8080"
+      - "${APP_PORT:-8081}:8080"
 
   # Optional - containerizes Ollama instead of requiring a host install. Off by default; opt in
   # with `docker compose --profile with-ai up`. After it's up for the first time, pull the

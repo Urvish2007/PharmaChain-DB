@@ -6,7 +6,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.DynamicInsert;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -24,12 +23,6 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-// BatchService never sets yieldPercentage when creating a batch (it's a post-production
-// figure, not something specified up front) and leaves it null. Without @DynamicInsert,
-// Hibernate includes every mapped column in the INSERT - including yield_percentage as an
-// explicit NULL - which overwrites the column's `DEFAULT 98.50` instead of letting it apply.
-// @DynamicInsert makes Hibernate omit null fields from the INSERT so the DB default is used.
-@DynamicInsert
 public class Batch {
 
     @Id

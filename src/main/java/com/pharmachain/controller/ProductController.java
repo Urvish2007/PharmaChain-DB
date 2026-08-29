@@ -31,12 +31,14 @@ public class ProductController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN','PRODUCTION_SUPERVISOR')")
     @ResponseStatus(HttpStatus.CREATED)
     public ProductMaster create(@Valid @RequestBody ProductMaster product) {
         return service.create(product);
     }
 
     @PutMapping("/{productId}")
+    @PreAuthorize("hasAnyRole('ADMIN','PRODUCTION_SUPERVISOR')")
     public ProductMaster update(@PathVariable String productId, @Valid @RequestBody ProductMaster product) {
         return service.update(productId, product);
     }

@@ -31,12 +31,14 @@ public class EquipmentController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN','WAREHOUSE_MANAGER','PRODUCTION_SUPERVISOR')")
     @ResponseStatus(HttpStatus.CREATED)
     public EquipmentMaster create(@Valid @RequestBody EquipmentMaster equipment) {
         return service.create(equipment);
     }
 
     @PutMapping("/{equipmentId}")
+    @PreAuthorize("hasAnyRole('ADMIN','WAREHOUSE_MANAGER','PRODUCTION_SUPERVISOR')")
     public EquipmentMaster update(@PathVariable String equipmentId, @Valid @RequestBody EquipmentMaster equipment) {
         return service.update(equipmentId, equipment);
     }

@@ -5,6 +5,7 @@ import com.pharmachain.entity.RmTransaction;
 import com.pharmachain.entity.RmTransactionId;
 import com.pharmachain.entity.Transaction;
 import com.pharmachain.entity.Warehouse;
+import com.pharmachain.exception.BusinessRuleViolationException;
 import com.pharmachain.repository.RmTransactionRepository;
 import com.pharmachain.repository.TransactionRepository;
 import com.pharmachain.repository.WarehouseRepository;
@@ -25,8 +26,19 @@ public class PurchaseService {
     private final WarehouseRepository warehouseRepository;
     private final RmTransactionRepository rmTransactionRepository;
 
+    /**
+     * invoiceNo is client-supplied, so Transaction's save() would call merge() (not persist())
+     * on a duplicate id and silently overwrite an unrelated existing invoice's currency/value -
+     * while still creating a brand-new Warehouse lot and RM_Transaction line pointing at it,
+     * leaving the invoice and its line items inconsistent with no error raised at all. This
+     * check turns that into a clear 422 before anything is written.
+     */
     @Transactional
     public Warehouse recordPurchase(RecordPurchaseRequest request) {
+        if (transactionRepository.existsById(request.invoiceNo())) {
+            throw new BusinessRuleViolationException("Invoice '" + request.invoiceNo() + "' already exists");
+        }
+
         Transaction transaction = Transaction.builder()
                 .invoiceNo(request.invoiceNo())
                 .transactionDate(request.transactionDate())

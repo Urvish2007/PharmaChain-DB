@@ -128,7 +128,7 @@ psql -h localhost -U postgres -d pharmachain -f db/02_security_schema.sql
 > to the next statement, which is exactly what should happen.
 
 > **`02_security_schema.sql`** adds the `app_user` login table (new, on top of the original
-> schema) and seeds four demo accounts - see [Demo accounts](#demo-accounts) below.
+> schema) and seeds five demo accounts - see [Demo accounts](#demo-accounts) below.
 
 ### 3. Run the app
 
@@ -174,6 +174,7 @@ Seeded by `db/02_security_schema.sql`, for local development and grading only.
 | `qc.analyst` | `Qc@12345` | `QC_ANALYST` - submits QC results, initiates recalls |
 | `wh.manager` | `Wh@12345` | `WAREHOUSE_MANAGER` - records purchases, dispenses material, creates batches |
 | `sales.rep` | `Sales@123` | `SALES` - records sales |
+| `auditor` | `Audit@123` | `AUDITOR` - read-only; every write endpoint deliberately excludes this role |
 
 ## API reference
 
@@ -190,13 +191,16 @@ Every endpoint below requires `Authorization: Bearer <token>` unless marked **pu
 
 | Resource | Base path | Write access |
 |---|---|---|
-| Materials | `GET/POST /api/v1/materials`, `GET/PUT/DELETE /api/v1/materials/{materialId}` | any authenticated role to create/update; `ADMIN` to delete |
-| Accounts | `GET/POST /api/v1/accounts`, `GET/PUT/DELETE /api/v1/accounts/{accountNo}` | `ADMIN` to delete |
-| Employees | `GET/POST /api/v1/employees`, `GET/PUT/DELETE /api/v1/employees/{empId}` | `ADMIN` to delete |
-| Equipment | `GET/POST /api/v1/equipment`, `GET/PUT/DELETE /api/v1/equipment/{equipmentId}` | `ADMIN` to delete |
-| Products | `GET/POST /api/v1/products`, `GET/PUT/DELETE /api/v1/products/{productId}` | `ADMIN` to delete |
-| Supplier contracts | `GET/POST /api/v1/supplier-contracts`, `GET/DELETE /.../{contractId}`, `?materialId=` filter | `ADMIN` to delete |
+| Materials | `GET/POST /api/v1/materials`, `GET/PUT/DELETE /api/v1/materials/{materialId}` | `ADMIN`, `WAREHOUSE_MANAGER` to create/update; `ADMIN` to delete |
+| Accounts | `GET/POST /api/v1/accounts`, `GET/PUT/DELETE /api/v1/accounts/{accountNo}` | `ADMIN` only (create/update/delete) |
+| Employees | `GET/POST /api/v1/employees`, `GET/PUT/DELETE /api/v1/employees/{empId}` | `ADMIN` only (create/update/delete) |
+| Equipment | `GET/POST /api/v1/equipment`, `GET/PUT/DELETE /api/v1/equipment/{equipmentId}` | `ADMIN`, `WAREHOUSE_MANAGER`, `PRODUCTION_SUPERVISOR` to create/update; `ADMIN` to delete |
+| Products | `GET/POST /api/v1/products`, `GET/PUT/DELETE /api/v1/products/{productId}` | `ADMIN`, `PRODUCTION_SUPERVISOR` to create/update; `ADMIN` to delete |
+| Supplier contracts | `GET/POST /api/v1/supplier-contracts`, `GET/DELETE /.../{contractId}`, `?materialId=` filter | `ADMIN`, `WAREHOUSE_MANAGER` to create; `ADMIN` to delete |
 | Maintenance logs | `GET/POST /api/v1/maintenance-logs`, `?equipmentId=` filter | `ADMIN`, `PRODUCTION_SUPERVISOR`, `WAREHOUSE_MANAGER` |
+
+`AUDITOR` and every other authenticated role can always read (`GET`) all of the above; only the
+roles listed can write.
 
 ### Production workflow
 

@@ -10,6 +10,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -46,14 +47,33 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             Optional<String> username = jwtService.extractUsername(token);
 
             if (username.isPresent()) {
-                UserDetails userDetails = userDetailsService.loadUserByUsername(username.get());
-                var authToken = new UsernamePasswordAuthenticationToken(
-                        userDetails, null, userDetails.getAuthorities());
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authToken);
+                try {
+                    UserDetails userDetails = userDetailsService.loadUserByUsername(username.get());
+                    if (isUsable(userDetails)) {
+                        var authToken = new UsernamePasswordAuthenticationToken(
+                                userDetails, null, userDetails.getAuthorities());
+                        authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                        SecurityContextHolder.getContext().setAuthentication(authToken);
+                    }
+                    // else: account disabled/locked/expired. Leave the context unauthenticated so
+                    // the request falls through to a normal 401 via RestAuthenticationEntryPoint,
+                    // rather than silently authenticating an account that shouldn't be usable.
+                } catch (UsernameNotFoundException e) {
+                    // The token names a user that no longer exists (e.g. deleted after the token
+                    // was issued). This filter runs *before* ExceptionTranslationFilter in the
+                    // chain, so nothing downstream would catch this if it escaped - leave the
+                    // context unauthenticated instead and let the normal 401 path handle it.
+                }
             }
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private boolean isUsable(UserDetails userDetails) {
+        return userDetails.isEnabled()
+                && userDetails.isAccountNonLocked()
+                && userDetails.isAccountNonExpired()
+                && userDetails.isCredentialsNonExpired();
     }
 }

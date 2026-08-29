@@ -2,6 +2,8 @@ package com.pharmachain.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -36,6 +38,9 @@ public class MaintenanceLog {
     @Column(name = "maintenance_date", nullable = false)
     private LocalDate maintenanceDate;
 
+    // DB: NOT NULL CHECK (Cost >= 0)
     @Column(name = "cost", precision = 10, scale = 2, nullable = false)
+    @NotNull
+    @PositiveOrZero
     private BigDecimal cost;
 }

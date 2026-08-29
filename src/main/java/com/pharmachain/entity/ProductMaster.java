@@ -2,6 +2,7 @@ package com.pharmachain.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -40,10 +41,16 @@ public class ProductMaster {
     private String packingSize;
 
     /** 'M' (salable/marketable) or 'S' (sample) - enforced by a CHECK constraint in the DB. */
+    // DB: CHECK (SalableorSample IN ('M','S'))
     @Column(name = "salableorsample", length = 1, nullable = false)
+    @NotBlank
+    @Pattern(regexp = "M|S")
     private String salableOrSample;
 
     /** 'G' (generic) or 'B' (branded) - enforced by a CHECK constraint in the DB. */
+    // DB: CHECK (GenericorBranded IN ('G','B'))
     @Column(name = "genericorbranded", length = 1, nullable = false)
+    @NotBlank
+    @Pattern(regexp = "G|B")
     private String genericOrBranded;
 }

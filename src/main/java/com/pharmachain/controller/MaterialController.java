@@ -31,12 +31,14 @@ public class MaterialController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN','WAREHOUSE_MANAGER')")
     @ResponseStatus(HttpStatus.CREATED)
     public MaterialMaster create(@Valid @RequestBody MaterialMaster material) {
         return service.create(material);
     }
 
     @PutMapping("/{materialId}")
+    @PreAuthorize("hasAnyRole('ADMIN','WAREHOUSE_MANAGER')")
     public MaterialMaster update(@PathVariable String materialId, @Valid @RequestBody MaterialMaster material) {
         return service.update(materialId, material);
     }

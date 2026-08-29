@@ -35,4 +35,7 @@ INSERT INTO app_user (username, password_hash, role) VALUES
     -- password: Wh@12345
     ('wh.manager', '$2b$10$R8gh8NJUCzQxIuXnP1tcG.9p8fV0UNnUx3rBN5gQe9.bwH0wwaUbK', 'WAREHOUSE_MANAGER'),
     -- password: Sales@123
-    ('sales.rep',  '$2b$10$xykztofz/L9ZonYmGL5Fce2BigbHdVR/YL/LlBUaAn8xkjPXxA9KW', 'SALES');
+    ('sales.rep',  '$2b$10$xykztofz/L9ZonYmGL5Fce2BigbHdVR/YL/LlBUaAn8xkjPXxA9KW', 'SALES'),
+    -- password: Audit@123 - read-only role: can authenticate and GET, but every write endpoint
+    -- in this project deliberately excludes AUDITOR from its @PreAuthorize role list.
+    ('auditor',    '$2b$10$iukE.hRnf.G9fvEZKZXzo.6J78Eof.RqQDWCWeFCDXHyLHJ7ut.hu', 'AUDITOR');

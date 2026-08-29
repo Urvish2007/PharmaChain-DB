@@ -42,11 +42,15 @@ USER spring:spring
 
 EXPOSE 8080
 
-# No spring-boot-starter-actuator on the classpath (yet), so this is a plain "is anything
-# listening on 8080" TCP check via bash's /dev/tcp rather than a real HTTP health probe.
-# Swap for `CMD curl -f http://localhost:8080/actuator/health` if actuator gets added later.
+# Real HTTP health check against Actuator's /actuator/health, sent by hand over bash's
+# /dev/tcp pseudo-device rather than via curl/wget - the noble-based JRE image doesn't ship
+# either of those by default, and installing one just for this felt like the wrong trade-off.
+# Checks the response body for a literal "UP" status rather than just "is port 8080 open".
 HEALTHCHECK --interval=30s --timeout=5s --start-period=45s --retries=3 \
-    CMD bash -c 'exec 3<>/dev/tcp/localhost/8080' || exit 1
+    CMD bash -c '\
+        exec 3<>/dev/tcp/127.0.0.1/8080 && \
+        printf "GET /actuator/health HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n" >&3 && \
+        grep -q "\"status\":\"UP\"" <&3' || exit 1
 
 # Shell form so JAVA_OPTS (e.g. "-Xmx256m") can be supplied at `docker run` time without
 # rebuilding the image; expands to nothing, harmlessly, if unset.

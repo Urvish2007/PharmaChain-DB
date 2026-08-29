@@ -1,12 +1,16 @@
 package com.pharmachain.exception;
 
+import jakarta.validation.ConstraintViolationException;
 import org.postgresql.util.PSQLException;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.NoHandlerFoundException;
 
 import java.util.List;
 
@@ -43,6 +47,55 @@ public class GlobalExceptionHandler {
                 .toList();
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ApiError.of(400, "VALIDATION_FAILED", "One or more fields are invalid", details));
+    }
+
+    /**
+     * Bean Validation failures that aren't on a @Valid @RequestBody - e.g. a future
+     * @Validated @RequestParam/@PathVariable constraint. Not currently reachable by any
+     * endpoint in this project, but cheap to have ready for the next one that needs it.
+     */
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ApiError> handleConstraintViolation(ConstraintViolationException ex) {
+        List<String> details = ex.getConstraintViolations().stream()
+                .map(v -> v.getPropertyPath() + ": " + v.getMessage())
+                .toList();
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiError.of(400, "VALIDATION_FAILED", "One or more parameters are invalid", details));
+    }
+
+    /**
+     * A path variable or query param that can't be converted to its target type - e.g.
+     * GET /api/v1/batches/not-a-number, where {batchNo} is a Long. Without this, Spring's
+     * conversion failure was falling through to the generic 500 handler, which is misleading:
+     * this is a malformed request, not a server error.
+     */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ApiError> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        String expected = ex.getRequiredType() != null ? ex.getRequiredType().getSimpleName() : "a different type";
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiError.of(400, "INVALID_PARAMETER",
+                        "'%s' is not a valid value for '%s' - expected %s"
+                                .formatted(ex.getValue(), ex.getName(), expected)));
+    }
+
+    /** Malformed JSON, or a value that doesn't match the target type, in a request body. */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiError> handleMalformedBody(HttpMessageNotReadableException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiError.of(400, "MALFORMED_REQUEST_BODY", "The request body is missing or not valid JSON"));
+    }
+
+    /**
+     * A route that doesn't match any controller at all. Spring Boot only throws this (instead of
+     * quietly delegating to its own default 404 handling, which returns a differently-shaped
+     * body) when spring.mvc.throw-exception-if-no-handler-found and
+     * spring.web.resources.add-mappings=false are both set - see application.yml - specifically
+     * so a request to a nonexistent endpoint still gets this project's normal ApiError shape.
+     */
+    @ExceptionHandler(NoHandlerFoundException.class)
+    public ResponseEntity<ApiError> handleNoHandler(NoHandlerFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiError.of(404, "NOT_FOUND", "No endpoint matches " + ex.getHttpMethod() + " " + ex.getRequestURL()));
     }
 
     /**

@@ -2,6 +2,7 @@ package com.pharmachain.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -36,6 +37,9 @@ public class EquipmentMaster {
     private LocalDate lastCalibrationDate;
 
     /** Active | Maintenance - enforced by a CHECK constraint in the DB. */
+    // DB: CHECK (Status IN ('Active','Maintenance'))
     @Column(name = "status", length = 20, nullable = false)
+    @NotBlank
+    @Pattern(regexp = "Active|Maintenance")
     private String status;
 }

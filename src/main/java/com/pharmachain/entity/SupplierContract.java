@@ -2,6 +2,8 @@ package com.pharmachain.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -34,7 +36,10 @@ public class SupplierContract {
     @NotBlank
     private String materialId;
 
+    // DB: NOT NULL CHECK (Agreed_Price > 0)
     @Column(name = "agreed_price", precision = 10, scale = 2, nullable = false)
+    @NotNull
+    @Positive
     private BigDecimal agreedPrice;
 
     @Column(name = "valid_until", nullable = false)

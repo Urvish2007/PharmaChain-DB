@@ -1,6 +1,7 @@
 package com.pharmachain.service;
 
 import com.pharmachain.entity.EmployeeMaster;
+import com.pharmachain.exception.BusinessRuleViolationException;
 import com.pharmachain.exception.ResourceNotFoundException;
 import com.pharmachain.repository.EmployeeMasterRepository;
 import lombok.RequiredArgsConstructor;
@@ -25,8 +26,13 @@ public class EmployeeService {
                 .orElseThrow(() -> ResourceNotFoundException.forId("Employee", empId));
     }
 
+    /** See MaterialService#create for why this existence check exists - save() would otherwise merge() on a duplicate id and silently overwrite the existing employee instead of failing. */
     @Transactional
     public EmployeeMaster create(EmployeeMaster employee) {
+        if (repository.existsById(employee.getEmpId())) {
+            throw new BusinessRuleViolationException(
+                    "Employee '" + employee.getEmpId() + "' already exists");
+        }
         return repository.save(employee);
     }
 

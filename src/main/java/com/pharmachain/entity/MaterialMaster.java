@@ -3,20 +3,16 @@ package com.pharmachain.entity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.DynamicInsert;
 
 import java.math.BigDecimal;
 
-/**
- * Mirrors Material_Master: the raw-material catalog (name, storage rules, shelf life, reorder point).
- * This entity doubles as the create/update request body (see MaterialController) - a client that
- * omits reorderLevel should get the DB's `DEFAULT 1000`, not a silent NULL, hence @DynamicInsert.
- */
+/** Mirrors Material_Master: the raw-material catalog (name, storage rules, shelf life, reorder point). */
 @Entity
 @Table(name = "material_master", schema = "pharma_manufacturing")
 @Getter
@@ -24,7 +20,6 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@DynamicInsert
 public class MaterialMaster {
 
     @Id
@@ -45,6 +40,7 @@ public class MaterialMaster {
 
     @Column(name = "shelf_life", nullable = false)
     @NotNull
+    @Positive
     private Integer shelfLife;
 
     @Column(name = "therapeutic_category", length = 30, nullable = false)
@@ -63,6 +59,9 @@ public class MaterialMaster {
     @NotBlank
     private String uom;
 
+    // DB: DEFAULT 1000 CHECK (Reorder_Level > 0) - nullable (falls back to the DB default),
+    // but if a value IS supplied it must be positive.
     @Column(name = "reorder_level")
+    @Positive
     private BigDecimal reorderLevel;
 }

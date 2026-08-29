@@ -4,6 +4,7 @@ import com.pharmachain.dto.request.RecordSaleRequest;
 import com.pharmachain.entity.FgTransaction;
 import com.pharmachain.entity.FgTransactionId;
 import com.pharmachain.entity.Transaction;
+import com.pharmachain.exception.BusinessRuleViolationException;
 import com.pharmachain.repository.FgTransactionRepository;
 import com.pharmachain.repository.TransactionRepository;
 import lombok.RequiredArgsConstructor;
@@ -23,8 +24,20 @@ public class SalesService {
     private final TransactionRepository transactionRepository;
     private final FgTransactionRepository fgTransactionRepository;
 
+    /**
+     * invoiceNo is client-supplied and Transactions is a single shared table for both buy and
+     * sell rows, so save() would call merge() (not persist()) on a duplicate id - silently
+     * overwriting an unrelated existing invoice (even one from a *purchase*) instead of failing.
+     * Since invoiceNo is checked here before anything is written, and this is the only place
+     * FG_Transaction rows get created, a duplicate (invoiceNo, batchNo) FG_Transaction line
+     * can't occur without also tripping this same check first.
+     */
     @Transactional
     public FgTransaction recordSale(RecordSaleRequest request) {
+        if (transactionRepository.existsById(request.invoiceNo())) {
+            throw new BusinessRuleViolationException("Invoice '" + request.invoiceNo() + "' already exists");
+        }
+
         Transaction transaction = Transaction.builder()
                 .invoiceNo(request.invoiceNo())
                 .transactionDate(request.transactionDate())

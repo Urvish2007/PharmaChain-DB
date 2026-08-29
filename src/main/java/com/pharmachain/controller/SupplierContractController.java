@@ -31,6 +31,7 @@ public class SupplierContractController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN','WAREHOUSE_MANAGER')")
     @ResponseStatus(HttpStatus.CREATED)
     public SupplierContract create(@Valid @RequestBody SupplierContract contract) {
         return service.create(contract);

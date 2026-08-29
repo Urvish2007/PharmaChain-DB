@@ -1,6 +1,7 @@
 package com.pharmachain.service;
 
 import com.pharmachain.entity.AccountMaster;
+import com.pharmachain.exception.BusinessRuleViolationException;
 import com.pharmachain.exception.ResourceNotFoundException;
 import com.pharmachain.repository.AccountMasterRepository;
 import lombok.RequiredArgsConstructor;
@@ -25,8 +26,13 @@ public class AccountService {
                 .orElseThrow(() -> ResourceNotFoundException.forId("Account", accountNo));
     }
 
+    /** See MaterialService#create for why this existence check exists - save() would otherwise merge() on a duplicate id and silently overwrite the existing account instead of failing. */
     @Transactional
     public AccountMaster create(AccountMaster account) {
+        if (repository.existsById(account.getAccountNo())) {
+            throw new BusinessRuleViolationException(
+                    "Account '" + account.getAccountNo() + "' already exists");
+        }
         return repository.save(account);
     }
 

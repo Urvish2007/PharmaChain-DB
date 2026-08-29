@@ -43,9 +43,17 @@ public class BatchService {
      * Creates a production batch. Mfg/Exp date rules are re-validated here for a fast, friendly
      * error, but trg_strict_batch_dates on the Batch table is what actually guarantees they can
      * never be violated - even by a direct SQL client that bypasses this API entirely.
+     *
+     * <p>The existsById check below matters more than it looks: batchNo is client-supplied, so
+     * Spring Data's save() would call merge() (not persist()) on a duplicate id and silently
+     * UPDATE the existing batch's dates/stock instead of failing - this turns that into a
+     * clear 422 up front instead.
      */
     @Transactional
     public Batch createBatch(CreateBatchRequest request) {
+        if (batchRepository.existsById(request.batchNo())) {
+            throw new BusinessRuleViolationException("Batch '" + request.batchNo() + "' already exists");
+        }
         if (request.mfgDate().isAfter(java.time.LocalDate.now())) {
             throw new BusinessRuleViolationException(
                     "Manufacturing date cannot be in the future: " + request.mfgDate());
@@ -71,12 +79,29 @@ public class BatchService {
      * Issues raw material from a warehouse lot to a batch. The actual stock check and deduction
      * happens inside Postgres (trg_deduct_stock_on_dispense) - this pre-check exists purely to
      * return a fast, specific error instead of waiting for the round-trip to fail.
+     *
+     * <p>The existsById check below is not just about a friendly error message: batchNo+itemId
+     * is a client-supplied composite key, so a second dispense for the same pair would make
+     * save() call merge() and silently UPDATE quantity_issued - and because
+     * trg_deduct_stock_on_dispense only fires on INSERT, that update would NOT re-adjust
+     * Warehouse.stock, silently drifting the stock ledger from reality. If more material is
+     * needed for the same batch, it has to come from a different warehouse lot.
      */
     @Transactional
     public MaterialDispensing dispenseMaterial(DispenseMaterialRequest request) {
         findById(request.batchNo());
         Warehouse lot = warehouseRepository.findById(request.itemId())
                 .orElseThrow(() -> ResourceNotFoundException.forId("Warehouse item", request.itemId()));
+
+        MaterialDispensingId dispensingId = MaterialDispensingId.builder()
+                .batchNo(request.batchNo())
+                .itemId(request.itemId())
+                .build();
+        if (dispensingRepository.existsById(dispensingId)) {
+            throw new BusinessRuleViolationException(
+                    "Material has already been dispensed from item %d to batch %d - dispense from a different lot instead"
+                            .formatted(request.itemId(), request.batchNo()));
+        }
 
         if (lot.getStock().compareTo(request.quantityIssued()) < 0) {
             throw new BusinessRuleViolationException(
@@ -85,10 +110,7 @@ public class BatchService {
         }
 
         MaterialDispensing dispensing = MaterialDispensing.builder()
-                .id(MaterialDispensingId.builder()
-                        .batchNo(request.batchNo())
-                        .itemId(request.itemId())
-                        .build())
+                .id(dispensingId)
                 .quantityIssued(request.quantityIssued())
                 .build();
         // trg_deduct_stock_on_dispense fires here and decrements Warehouse.stock atomically.

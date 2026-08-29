@@ -1,6 +1,7 @@
 package com.pharmachain.service;
 
 import com.pharmachain.entity.MaintenanceLog;
+import com.pharmachain.exception.BusinessRuleViolationException;
 import com.pharmachain.exception.ResourceNotFoundException;
 import com.pharmachain.repository.MaintenanceLogRepository;
 import lombok.RequiredArgsConstructor;
@@ -29,8 +30,13 @@ public class MaintenanceService {
                 .orElseThrow(() -> ResourceNotFoundException.forId("Maintenance log", maintenanceId));
     }
 
+    /** See MaterialService#create for why this existence check exists - save() would otherwise merge() on a duplicate id and silently overwrite the existing log instead of failing. */
     @Transactional
     public MaintenanceLog create(MaintenanceLog log) {
+        if (repository.existsById(log.getMaintenanceId())) {
+            throw new BusinessRuleViolationException(
+                    "Maintenance log '" + log.getMaintenanceId() + "' already exists");
+        }
         return repository.save(log);
     }
 }

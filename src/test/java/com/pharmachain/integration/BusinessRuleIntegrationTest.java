@@ -19,8 +19,9 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 import org.testcontainers.utility.MountableFile;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -237,5 +238,117 @@ class BusinessRuleIntegrationTest {
                                 """))
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.code").value("BUSINESS_RULE_VIOLATION"));
+    }
+
+    // ---------------------------------------------------------------------
+    // Regression tests for this review pass: Spring Data JPA's save() calls merge() (not
+    // persist()) whenever a manually-assigned @Id is already non-null, which is always true for
+    // every client-supplied id in this project. Before the fix, a duplicate id would silently
+    // overwrite the existing row instead of failing - these prove it now fails clearly instead.
+    // ---------------------------------------------------------------------
+
+    @Test
+    void creatingAMaterialWithAnIdThatAlreadyExistsIsRejectedNotSilentlyOverwritten() throws Exception {
+        String body = """
+                {"materialId": "MAT999", "materialName": "Test Material", "materialType": "Excipient",
+                 "storageCondition": "Room Temp", "shelfLife": 24, "therapeuticCategory": "None",
+                 "materialState": "Solid", "hazardous": false, "inflammable": false, "uom": "kg",
+                 "reorderLevel": 100}
+                """;
+
+        // First creation succeeds...
+        mockMvc.perform(post("/api/v1/materials")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isCreated());
+
+        // ...a second creation with the same id must be rejected, not silently accepted as an edit.
+        mockMvc.perform(post("/api/v1/materials")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.code").value("BUSINESS_RULE_VIOLATION"));
+    }
+
+    @Test
+    void dispensingTheSameLotToTheSameBatchTwiceIsRejectedNotSilentlyMerged() throws Exception {
+        String body = """
+                {"itemId": 1, "quantityIssued": 5}
+                """;
+
+        mockMvc.perform(post("/api/v1/batches/5002/dispense")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isCreated());
+
+        // A second dispense of the exact same (batch, item) pair must be rejected. Before the
+        // fix, this would silently UPDATE quantity_issued without trg_deduct_stock_on_dispense
+        // re-firing (it's a BEFORE INSERT trigger), silently drifting the stock ledger.
+        mockMvc.perform(post("/api/v1/batches/5002/dispense")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.code").value("BUSINESS_RULE_VIOLATION"));
+    }
+
+    // ---------------------------------------------------------------------
+    // Regression tests: malformed client input must come back as 400, not a generic 500.
+    // ---------------------------------------------------------------------
+
+    @Test
+    void aNonNumericBatchNumberInThePathReturns400NotA500() throws Exception {
+        mockMvc.perform(get("/api/v1/batches/not-a-number")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("INVALID_PARAMETER"));
+    }
+
+    @Test
+    void malformedJsonBodyReturns400NotA500() throws Exception {
+        mockMvc.perform(post("/api/v1/materials")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{ this is not valid json"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("MALFORMED_REQUEST_BODY"));
+    }
+
+    // ---------------------------------------------------------------------
+    // Regression tests: AUDITOR is read-only across every write endpoint in the project.
+    // ---------------------------------------------------------------------
+
+    @Test
+    void auditorCannotCreateMaterials() throws Exception {
+        String auditorToken = login("auditor", "Audit@123");
+        mockMvc.perform(post("/api/v1/materials")
+                        .header("Authorization", "Bearer " + auditorToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"materialId": "MAT998", "materialName": "Test", "materialType": "Excipient",
+                                 "storageCondition": "Room Temp", "shelfLife": 24, "therapeuticCategory": "None",
+                                 "materialState": "Solid", "hazardous": false, "inflammable": false, "uom": "kg",
+                                 "reorderLevel": 100}
+                                """))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+    }
+
+    @Test
+    void warehouseManagerCanCreateMaterials() throws Exception {
+        String whToken = login("wh.manager", "Wh@12345");
+        mockMvc.perform(post("/api/v1/materials")
+                        .header("Authorization", "Bearer " + whToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"materialId": "MAT997", "materialName": "Test", "materialType": "Excipient",
+                                 "storageCondition": "Room Temp", "shelfLife": 24, "therapeuticCategory": "None",
+                                 "materialState": "Solid", "hazardous": false, "inflammable": false, "uom": "kg",
+                                 "reorderLevel": 100}
+                                """))
+                .andExpect(status().isCreated());
     }
 }

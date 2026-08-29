@@ -31,12 +31,14 @@ public class AccountController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     @ResponseStatus(HttpStatus.CREATED)
     public AccountMaster create(@Valid @RequestBody AccountMaster account) {
         return service.create(account);
     }
 
     @PutMapping("/{accountNo}")
+    @PreAuthorize("hasRole('ADMIN')")
     public AccountMaster update(@PathVariable String accountNo, @Valid @RequestBody AccountMaster account) {
         return service.update(accountNo, account);
     }

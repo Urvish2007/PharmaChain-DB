@@ -30,7 +30,8 @@ public class ProductQualityCheck {
     @Column(name = "report_id", length = 20)
     private String reportId;
 
-    @Column(name = "batch_no")
+    @Column(name = "batch_no", nullable = false)
+    @jakarta.validation.constraints.NotNull
     private Long batchNo;
 
     @Column(name = "analysis_date", nullable = false)

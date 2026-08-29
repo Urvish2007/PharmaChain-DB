@@ -32,7 +32,7 @@ public class RecallService {
     public void initiateRecall(InitiateRecallRequest request) {
         jdbcTemplate.execute((ConnectionCallback<Void>) connection -> {
             try (CallableStatement cs = connection.prepareCall(
-                    "{call execute_product_recall(?, ?, ?)}")) {
+                    "{call pharma_manufacturing.execute_product_recall(?, ?, ?)}")) {
                 cs.setString(1, request.recallId());
                 cs.setLong(2, request.batchNo());
                 cs.setString(3, request.reason());

@@ -53,6 +53,11 @@ public class ComplianceDocsIngestionRunner implements ApplicationRunner {
                 return;
             }
 
+            if (complianceDocs == null || complianceDocs.length == 0) {
+                log.info("No compliance docs found in classpath:compliance-docs/ — skipping ingestion");
+                return;
+            }
+
             List<Document> documents = new ArrayList<>();
             for (Resource resource : complianceDocs) {
                 String content = resource.getContentAsString(StandardCharsets.UTF_8);

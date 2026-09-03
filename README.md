@@ -56,12 +56,13 @@ Client
   (`ADMIN`, `QC_ANALYST`, `WAREHOUSE_MANAGER`, `PRODUCTION_SUPERVISOR`, `SALES`, `AUDITOR`)
   rather than reusing the free-text `Employee_Master.Role` column, which is descriptive HR data
   and was never meant to double as an authorization scheme.
-- **Chat uses Anthropic; embeddings use a local Ollama model.** Anthropic doesn't expose an
+- **Chat uses Groq; embeddings use a local Ollama model.** Groq doesn't expose an
   embeddings API, and requiring a second paid API key just to run the RAG demo felt like a bad
   trade-off - `nomic-embed-text` via Ollama is free and runs locally. The `ChatClient` bean in
-  `AiConfig` is wired explicitly to the concrete `AnthropicChatModel` type (not the generic
+  `AiConfig` is wired explicitly to the concrete `OpenAiChatModel` type (not the generic
   `ChatModel` interface) specifically to avoid ambiguity now that two `ChatModel`-family beans
-  exist in the context.
+  exist in the context. Groq's API is OpenAI-compatible, so the `spring-ai-starter-model-openai`
+  starter is reused with `base-url` pointed at `https://api.groq.com/openai`.
 - **The vector store lives in Postgres's default `public` schema, not `pharma_manufacturing`.**
   `PgVectorStore`'s schema initialization runs during Spring context startup, before this
   project's own SQL scripts are guaranteed to have created the `pharma_manufacturing` schema
@@ -97,8 +98,8 @@ Client
 - Docker, only if you want to run the integration test (it uses Testcontainers)
 - [Ollama](https://ollama.com) running locally with `nomic-embed-text` pulled, for the AI
   features: `ollama pull nomic-embed-text`
-- An `ANTHROPIC_API_KEY` for the AI features' chat model (get one at
-  [console.anthropic.com](https://console.anthropic.com))
+- A `GROQ_API_KEY` for the AI features' chat model (get one at
+  [console.groq.com](https://console.groq.com))
 
 ### 1. Start Postgres
 
@@ -133,7 +134,7 @@ psql -h localhost -U postgres -d pharmachain -f db/02_security_schema.sql
 ### 3. Run the app
 
 ```bash
-export ANTHROPIC_API_KEY=sk-ant-...
+export GROQ_API_KEY=gsk_...
 mvn spring-boot:run
 ```
 
@@ -149,7 +150,7 @@ curl -X POST http://localhost:8080/api/v1/auth/login \
 
 On first startup (with Ollama running), the app automatically ingests
 `src/main/resources/compliance-docs/*.md` into the vector store - no separate step needed.
-Without `ANTHROPIC_API_KEY` set, or without Ollama running, the rest of the API works fine;
+Without `GROQ_API_KEY` set, or without Ollama running, the rest of the API works fine;
 only the `/api/v1/ai/**` endpoints will fail.
 
 ### 4. Run the tests
@@ -244,7 +245,7 @@ roles listed can write.
 `docker-compose.yml` now runs the app itself, not just the dev database.
 
 ```bash
-cp .env.example .env        # fill in ANTHROPIC_API_KEY at least
+cp .env.example .env        # fill in GROQ_API_KEY at least
 docker compose up -d --build
 ```
 

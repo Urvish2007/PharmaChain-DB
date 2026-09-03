@@ -9,13 +9,14 @@
 -- a service account) without forcing every employee to have a login or vice versa.
 -- =====================================================================
 
+CREATE SCHEMA IF NOT EXISTS pharma_manufacturing;
 SET search_path TO pharma_manufacturing;
 
 CREATE TABLE app_user (
     user_id       BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     username      VARCHAR(50) UNIQUE NOT NULL,
     password_hash VARCHAR(100) NOT NULL,
-    emp_id        VARCHAR(20) REFERENCES employee_master(emp_id),
+    emp_id        VARCHAR(20) REFERENCES Employee_Master(emp_id),
     role          VARCHAR(30) NOT NULL
                   CHECK (role IN ('ADMIN', 'QC_ANALYST', 'WAREHOUSE_MANAGER',
                                   'PRODUCTION_SUPERVISOR', 'SALES', 'AUDITOR')),

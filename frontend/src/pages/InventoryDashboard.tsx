@@ -81,25 +81,26 @@ const InventoryDashboard: React.FC = () => {
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: idx * 0.05 }}
-                      key={item.materialId}
+                      key={item.itemId}
                       className="hover:bg-white/5 transition-colors group"
                     >
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-semibold text-white group-hover:text-blue-200 transition-colors">{item.materialName}</div>
-                        <div className="text-xs text-blue-200/50 font-mono mt-0.5">{item.materialId}</div>
+                        <div className="text-xs text-blue-200/50 font-mono mt-0.5">{item.materialType}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right">
-                        <span className="text-sm text-gray-300 font-medium">{item.stock}</span>
-                        <span className="text-xs text-gray-500 ml-1">{item.unit}</span>
+                        <span className="text-sm text-gray-300 font-medium">{item.currentStock.toLocaleString()}</span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right">
-                        <span className="text-sm text-gray-300">{item.reorderLevel}</span>
-                        <span className="text-xs text-gray-500 ml-1">{item.unit}</span>
+                        <span className="text-sm text-gray-300">{item.minimumRequired.toLocaleString()}</span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right">
-                        <div className="inline-flex items-center px-2.5 py-1 rounded-md bg-red-500/10 border border-red-500/20 text-red-400">
-                          <span className="text-sm font-bold">{item.shortage}</span>
-                          <span className="text-xs ml-1 opacity-70">{item.unit}</span>
+                        <div className={`inline-flex items-center px-2.5 py-1 rounded-md border ${
+                          item.unitsToOrder > 0
+                            ? 'bg-red-500/10 border-red-500/20 text-red-400'
+                            : 'bg-green-500/10 border-green-500/20 text-green-400'
+                        }`}>
+                          <span className="text-sm font-bold">{item.unitsToOrder > 0 ? `-${item.unitsToOrder.toLocaleString()}` : '✓ OK'}</span>
                         </div>
                       </td>
                     </motion.tr>

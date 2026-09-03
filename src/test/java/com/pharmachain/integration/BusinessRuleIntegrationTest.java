@@ -68,9 +68,10 @@ class BusinessRuleIntegrationTest {
         // (schema init only touches Postgres, not the embedding model), but skip the startup
         // ingestion step, which would otherwise try to call Ollama and fail.
         registry.add("app.ai.ingest-compliance-docs-on-startup", () -> "false");
-        // Guarantees AnthropicChatModel bean construction succeeds even with no real key
-        // present in this environment; nothing here exercises an actual Anthropic API call.
-        registry.add("spring.ai.anthropic.api-key", () -> "test-key-placeholder");
+        // Guarantees OpenAiChatModel bean construction succeeds even with no real key
+        // present in this environment; nothing here exercises an actual Groq API call.
+        registry.add("spring.ai.openai.api-key", () -> "test-key-placeholder");
+        registry.add("spring.ai.openai.base-url", () -> "https://api.groq.com/openai");
     }
 
     @Autowired

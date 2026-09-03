@@ -78,7 +78,8 @@ const ExpiryDashboard: React.FC = () => {
                   </tr>
                 ) : (
                   data.map((item, idx) => {
-                    const isCritical = item.daysToExpiry < 30;
+                    const isCritical = item.daysRemaining < 30;
+                    const isExpired = item.daysRemaining < 0;
                     return (
                       <motion.tr 
                         initial={{ opacity: 0, x: -10 }}
@@ -89,24 +90,26 @@ const ExpiryDashboard: React.FC = () => {
                       >
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm font-semibold text-white group-hover:text-yellow-100 transition-colors">{item.productName}</div>
-                          <div className="text-xs text-yellow-200/50 font-mono mt-0.5">{item.productId}</div>
+                          <div className="text-xs text-yellow-200/50 font-mono mt-0.5">{item.riskStatus}</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className="text-sm font-mono text-gray-300 bg-black/30 px-2 py-1 rounded border border-white/5">{item.batchNo}</span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right">
-                          <span className="text-sm text-gray-300 font-medium">{item.stockQty}</span>
+                          <span className="text-sm text-gray-300 font-medium">{item.unsoldInventory.toLocaleString()}</span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right">
-                          <span className="text-sm text-gray-300">{item.expiryDate}</span>
+                          <span className="text-sm text-gray-300">{item.expDate}</span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right">
                           <div className={`inline-flex items-center px-2.5 py-1 rounded-md border ${
-                            isCritical 
+                            isExpired
+                              ? 'bg-gray-500/10 border-gray-500/30 text-gray-400'
+                              : isCritical 
                               ? 'bg-red-500/10 border-red-500/30 text-red-400' 
                               : 'bg-yellow-500/10 border-yellow-500/30 text-yellow-400'
                           }`}>
-                            <span className="text-sm font-bold">{item.daysToExpiry}</span>
+                            <span className="text-sm font-bold">{item.daysRemaining}</span>
                             <span className="text-xs ml-1 opacity-70">days</span>
                           </div>
                         </td>

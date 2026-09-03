@@ -7,7 +7,9 @@ import {
   Search, 
   MessageSquare, 
   LogOut,
-  Shield
+  Shield,
+  Layers,
+  DollarSign
 } from 'lucide-react';
 import { cn } from '../utils/cn';
 import PageTransition from '../components/ui/PageTransition';
@@ -25,6 +27,8 @@ const MainLayout: React.FC = () => {
     { name: 'Inventory Shortage', href: '/dashboard/inventory', icon: Package },
     { name: 'Expiry Risk', href: '/dashboard/expiry', icon: AlertTriangle },
     { name: 'Batch Traceability', href: '/dashboard/traceability', icon: Search },
+    { name: 'Transactions', href: '/dashboard/transactions', icon: Layers },
+    { name: 'Financials', href: '/dashboard/financials', icon: DollarSign },
     { name: 'AI Copilot', href: '/copilot', icon: MessageSquare },
   ];
 

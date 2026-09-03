@@ -94,25 +94,24 @@ const TraceabilityDashboard: React.FC = () => {
                   <p className="text-sm text-purple-200/50 mt-1">Batch: <span className="font-mono text-purple-200">{data.batchNo}</span></p>
                 </div>
                 <div className={`mt-4 sm:mt-0 inline-flex items-center px-4 py-2 rounded-full border ${
-                  data.qcResult === 'PASSED' ? 'bg-green-500/10 border-green-500/30 text-green-400' :
-                  data.qcResult === 'FAILED' ? 'bg-red-500/10 border-red-500/30 text-red-400' : 
+                  data.qcStatus === 'PASSED' ? 'bg-green-500/10 border-green-500/30 text-green-400' :
+                  data.qcStatus === 'FAILED' ? 'bg-red-500/10 border-red-500/30 text-red-400' : 
                   'bg-yellow-500/10 border-yellow-500/30 text-yellow-400'
                 }`}>
-                  {data.qcResult === 'PASSED' && <CheckCircle className="w-5 h-5 mr-2" />}
-                  {data.qcResult === 'FAILED' && <XCircle className="w-5 h-5 mr-2" />}
-                  {(!data.qcResult || data.qcResult !== 'PASSED' && data.qcResult !== 'FAILED') && <AlertCircle className="w-5 h-5 mr-2" />}
-                  <span className="font-semibold tracking-wide">{data.qcStatus} {data.qcResult ? `- ${data.qcResult}` : ''}</span>
+                  {data.qcStatus === 'PASSED' && <CheckCircle className="w-5 h-5 mr-2" />}
+                  {data.qcStatus === 'FAILED' && <XCircle className="w-5 h-5 mr-2" />}
+                  {(data.qcStatus !== 'PASSED' && data.qcStatus !== 'FAILED') && <AlertCircle className="w-5 h-5 mr-2" />}
+                  <span className="font-semibold tracking-wide">QC {data.qcStatus}</span>
                 </div>
               </div>
               
               <div className="p-6 sm:p-8">
-                <dl className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                <dl className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   <div className="bg-white/5 rounded-xl p-4 border border-white/5 shadow-inner">
                     <dt className="text-xs font-medium text-purple-200/50 uppercase tracking-widest mb-1">Product</dt>
                     <dd className="text-lg font-medium text-white">{data.productName}</dd>
-                    <dd className="text-sm font-mono text-purple-300 mt-1">{data.productId}</dd>
                   </div>
-                  
+
                   <div className="bg-white/5 rounded-xl p-4 border border-white/5 shadow-inner">
                     <dt className="text-xs font-medium text-purple-200/50 uppercase tracking-widest mb-1">Manufacturing Date</dt>
                     <dd className="text-lg font-medium text-white">{data.mfgDate}</dd>
@@ -120,30 +119,30 @@ const TraceabilityDashboard: React.FC = () => {
 
                   <div className="bg-white/5 rounded-xl p-4 border border-white/5 shadow-inner">
                     <dt className="text-xs font-medium text-purple-200/50 uppercase tracking-widest mb-1">Expiry Date</dt>
-                    <dd className="text-lg font-medium text-white">{data.expiryDate}</dd>
+                    <dd className="text-lg font-medium text-white">{data.expDate}</dd>
                   </div>
 
                   <div className="bg-white/5 rounded-xl p-4 border border-white/5 shadow-inner">
-                    <dt className="text-xs font-medium text-purple-200/50 uppercase tracking-widest mb-1">Yield</dt>
-                    <dd className="text-3xl font-light text-white">{data.yieldPercentage}<span className="text-lg text-gray-400 ml-1">%</span></dd>
+                    <dt className="text-xs font-medium text-purple-200/50 uppercase tracking-widest mb-1">Total Sold to Market</dt>
+                    <dd className="text-3xl font-light text-white">{data.totalSoldToMarket.toLocaleString()}<span className="text-lg text-gray-400 ml-1">units</span></dd>
                   </div>
 
-                  <div className="sm:col-span-2 lg:col-span-2 bg-white/5 rounded-xl p-4 border border-white/5 shadow-inner">
-                    <dt className="text-xs font-medium text-purple-200/50 uppercase tracking-widest mb-3">Inventory Status</dt>
-                    <div className="grid grid-cols-3 gap-4">
-                      <div>
-                        <div className="text-2xl font-light text-white">{data.stockQty}</div>
-                        <div className="text-sm text-gray-400 mt-1">Produced</div>
-                      </div>
-                      <div>
-                        <div className="text-2xl font-light text-white">{data.soldQty || 0}</div>
-                        <div className="text-sm text-gray-400 mt-1">Sold</div>
-                      </div>
-                      <div>
-                        <div className="text-2xl font-light text-white">{data.remainingSaleable || 0}</div>
-                        <div className="text-sm text-gray-400 mt-1">Saleable</div>
-                      </div>
-                    </div>
+                  {/* Raw Materials — col-span-2 so it always fills the remaining row */}
+                  <div className="col-span-1 sm:col-span-2 bg-white/5 rounded-xl p-4 border border-white/5 shadow-inner">
+                    <dt className="text-xs font-medium text-purple-200/50 uppercase tracking-widest mb-3">Raw Materials Used</dt>
+                    <dd className="flex flex-wrap gap-2">
+                      {data.rawMaterialsUsed
+                        ? data.rawMaterialsUsed.split(',').map((m, i) => (
+                            <span
+                              key={i}
+                              className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-500/10 border border-purple-500/20 text-purple-300"
+                            >
+                              {m.trim()}
+                            </span>
+                          ))
+                        : <span className="text-gray-500 text-sm">No materials recorded</span>
+                      }
+                    </dd>
                   </div>
                 </dl>
               </div>

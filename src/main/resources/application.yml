@@ -5,6 +5,12 @@ spring:
   application:
     name: pharmachain-backend
 
+  # Groq has no embeddings API - we only use it for chat. Excluding OpenAI's embedding
+  # auto-configuration prevents the ambiguous-bean error (two EmbeddingModel candidates)
+  # and lets pgvector wire to OllamaEmbeddingModel unambiguously.
+  autoconfigure:
+    exclude: org.springframework.ai.model.openai.autoconfigure.OpenAiEmbeddingAutoConfiguration
+
   # Needed so an unmapped route throws NoHandlerFoundException (caught by
   # GlobalExceptionHandler) instead of Spring Boot silently returning its own default-shaped
   # 404 - see GlobalExceptionHandler#handleNoHandler.
@@ -17,7 +23,7 @@ spring:
   datasource:
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:pharmachain}
     username: ${DB_USER:postgres}
-    password: ${DB_PASSWORD:postgres}
+    password: ${DB_PASSWORD:1234}
 
   jpa:
     # DDL already lives in schema_and_data.sql (tables, seed data, triggers, views, procedure) -
@@ -33,19 +39,22 @@ spring:
         format_sql: true
     show-sql: false
 
-  # Spring AI: Anthropic for chat, Ollama for embeddings only. Nested under this SAME `spring:`
-  # key (not a second top-level `spring:` block - a duplicate top-level key is invalid YAML and
-  # SnakeYAML throws DuplicateKeyException on it, which previously prevented Spring Boot from
-  # starting at all, in dev, in tests, and in a container alike).
+  # Spring AI: Groq for chat (OpenAI-compatible API), Ollama for embeddings only. Nested
+  # under this SAME `spring:` key (not a second top-level `spring:` block - a duplicate
+  # top-level key is invalid YAML and SnakeYAML throws DuplicateKeyException on it, which
+  # previously prevented Spring Boot from starting at all, in dev, in tests, and in a
+  # container alike).
   ai:
-    anthropic:
-      api-key: ${ANTHROPIC_API_KEY:}
+    openai:
+      api-key: ${GROQ_API_KEY:}
+      base-url: https://api.groq.com/openai
       chat:
         options:
-          model: claude-sonnet-4-5
+          model: "llama-3.1-70b-versatile"
           temperature: 0.3
+
     # Ollama is used ONLY for embeddings here (see AiConfig - the chat client is wired
-    # explicitly to AnthropicChatModel, so having both providers on the classpath is fine).
+    # explicitly to OpenAiChatModel, so having both providers on the classpath is fine).
     # Run `ollama pull nomic-embed-text` locally before using any /api/v1/ai/** endpoint.
     ollama:
       base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
@@ -58,7 +67,7 @@ spring:
         index-type: HNSW
         distance-type: COSINE_DISTANCE
         dimensions: 768 # must match nomic-embed-text's output size
-        initialize-schema: true
+        initialize-schema: false
         # Deliberately left in the default "public" schema, not pharma_manufacturing: this
         # table is a Spring-AI-managed concern, not part of the hand-designed business schema,
         # and initializing it must not depend on db/01_schema_and_data.sql having run first.

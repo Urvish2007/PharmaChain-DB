@@ -1,41 +1,40 @@
 package com.pharmachain.ai;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
-import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.stereotype.Service;
 
 /**
- * A single chat call does two things at once: QuestionAnswerAdvisor retrieves the most relevant
- * compliance documents (why a rule exists, what it does) from pgvector and stuffs them into the
- * prompt, while DashboardAiTools lets the model pull live numbers (current shortages, expiry
- * risk, a specific batch's traceability) if the question needs them. A question like "why can't
- * I sell batch 5003" ends up grounded in both: the retrieved trg_prevent_bad_sales explanation
- * *and* a live lookup of batch 5003's actual QC status.
+ * Compliance copilot using Spring AI's tool-calling and RAG capabilities.
+ * It uses the QuestionAnswerAdvisor for compliance documents (RAG) and 
+ * tool calling (DashboardAiTools) to query live database data.
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ComplianceCopilotService {
 
     private final ChatClient chatClient;
     private final VectorStore vectorStore;
-    private final DashboardAiTools dashboardAiTools;
 
     public String ask(String question) {
-        QuestionAnswerAdvisor ragAdvisor = QuestionAnswerAdvisor.builder(vectorStore)
-                .searchRequest(SearchRequest.builder()
-                        .topK(4)
-                        .similarityThreshold(0.5)
-                        .build())
-                .build();
+        try {
+            String answer = chatClient.prompt()
+                    .user(question)
+                    .advisors(new QuestionAnswerAdvisor(vectorStore))
+                    .tools("getInventoryShortage", "getExpiryRisk", "getBatchTraceability")
+                    .call()
+                    .content();
 
-        return chatClient.prompt()
-                .user(question)
-                .advisors(ragAdvisor)
-                .tools(dashboardAiTools)
-                .call()
-                .content();
+            return (answer != null && !answer.isBlank())
+                    ? answer
+                    : "I wasn't able to generate a response for that question. Please try rephrasing or ask something else.";
+        } catch (Exception e) {
+            log.error("AI copilot call failed", e);
+            return "Sorry, the AI service encountered an error: " + e.getMessage();
+        }
     }
 }

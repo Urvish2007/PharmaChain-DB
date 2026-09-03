@@ -39,11 +39,21 @@ const Copilot: React.FC = () => {
 
     try {
       const response = await api.post('/ai/ask', { question: userMessage });
-      const answer = response.data.answer || (typeof response.data === 'string' ? response.data : 'Received empty response');
+      const data = response.data;
+      const answer = data?.answer
+        || (typeof data === 'string' && data.trim() ? data : null)
+        || 'Received an empty response. The AI service may be temporarily unavailable — please try again.';
       setMessages(prev => [...prev, { role: 'assistant', content: answer }]);
     } catch (err: any) {
-      setError('Failed to connect to the Copilot.');
-      setMessages(prev => [...prev, { role: 'assistant', content: 'Sorry, I encountered an error while processing your request.' }]);
+      const serverMsg = err?.response?.data?.message
+        || err?.response?.data?.error
+        || err?.message
+        || '';
+      const detail = serverMsg
+        ? `Error: ${serverMsg}`
+        : 'Sorry, I encountered an error while processing your request. Please check that the backend is running and try again.';
+      setError('Failed to get a response from the Copilot.');
+      setMessages(prev => [...prev, { role: 'assistant', content: detail }]);
     } finally {
       setLoading(false);
     }

@@ -25,6 +25,9 @@ import java.util.List;
  * line of defense. The {@link #handleDataAccess} handler below is what makes that
  * second layer visible to API clients as a normal 422 response instead of a 500.
  */
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -138,8 +141,9 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiError> handleUnexpected(Exception ex) {
+        log.error("Unexpected exception", ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiError.of(500, "INTERNAL_ERROR", "Something went wrong. Please try again."));
+                .body(ApiError.of(500, "INTERNAL_ERROR", "Something went wrong: " + ex.getMessage()));
     }
 
     private Throwable rootCause(Throwable ex) {

@@ -6,6 +6,8 @@ import Login from './pages/Login';
 import InventoryDashboard from './pages/InventoryDashboard';
 import ExpiryDashboard from './pages/ExpiryDashboard';
 import TraceabilityDashboard from './pages/TraceabilityDashboard';
+import TransactionsDashboard from './pages/TransactionsDashboard';
+import FinancialDashboard from './pages/FinancialDashboard';
 import Copilot from './pages/Copilot';
 import AmbientBackground from './components/3d/AmbientBackground';
 
@@ -14,24 +16,29 @@ function App() {
     <AuthProvider>
       <BrowserRouter>
         <AmbientBackground />
-        <Routes>
-          {/* Auth Routes */}
-          <Route element={<AuthLayout />}>
-            <Route path="/login" element={<Login />} />
-          </Route>
+        {/* Isolation wrapper ensures content always renders above the WebGL canvas */}
+        <div style={{ position: 'relative', zIndex: 1, isolation: 'isolate' }}>
+          <Routes>
+            {/* Auth Routes */}
+            <Route element={<AuthLayout />}>
+              <Route path="/login" element={<Login />} />
+            </Route>
 
-          {/* Protected Main Routes */}
-          <Route element={<MainLayout />}>
+            {/* Protected Main Routes */}
+            <Route element={<MainLayout />}>
             <Route path="/" element={<Navigate to="/dashboard/inventory" replace />} />
             <Route path="/dashboard/inventory" element={<InventoryDashboard />} />
             <Route path="/dashboard/expiry" element={<ExpiryDashboard />} />
             <Route path="/dashboard/traceability" element={<TraceabilityDashboard />} />
+            <Route path="/dashboard/transactions" element={<TransactionsDashboard />} />
+            <Route path="/dashboard/financials" element={<FinancialDashboard />} />
             <Route path="/copilot" element={<Copilot />} />
-          </Route>
+            </Route>
 
-          {/* Catch all */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+            {/* Catch all */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </div>
       </BrowserRouter>
     </AuthProvider>
   );

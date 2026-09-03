@@ -40,7 +40,7 @@ services:
       DB_USER: ${DB_USER:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:-postgres}
       JWT_SECRET: ${JWT_SECRET:-this-is-a-local-development-only-secret-change-it-before-deploying}
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
       # Assumes Ollama runs on your HOST machine (the default local-dev setup - see README),
       # not in a container. host.docker.internal reaches the host from inside a container;
       # Docker Desktop (Mac/Windows) resolves this natively, Linux needs the extra_hosts entry

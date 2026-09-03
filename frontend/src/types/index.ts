@@ -9,34 +9,31 @@ export interface AuthResponse {
 }
 
 export interface InventoryShortage {
-  materialId: string;
+  itemId: number;
   materialName: string;
-  stock: number;
-  reorderLevel: number;
-  shortage: number;
-  unit: string;
+  materialType: string;
+  currentStock: number;
+  minimumRequired: number;
+  unitsToOrder: number;
 }
 
 export interface ExpiryRisk {
-  batchNo: string;
-  productId: string;
+  batchNo: number;
   productName: string;
-  stockQty: number;
-  mfgDate: string;
-  expiryDate: string;
-  daysToExpiry: number;
+  expDate: string;
+  daysRemaining: number;
+  riskStatus: string;
+  manufacturedQty: number;
+  totalSoldQty: number;
+  unsoldInventory: number;
 }
 
 export interface BatchTraceability {
-  batchNo: string;
-  productId: string;
+  batchNo: number;
   productName: string;
   mfgDate: string;
-  expiryDate: string;
-  stockQty: number;
-  yieldPercentage: number;
+  expDate: string;
   qcStatus: string;
-  qcResult: string;
-  soldQty: number;
-  remainingSaleable: number;
+  rawMaterialsUsed: string;
+  totalSoldToMarket: number;
 }

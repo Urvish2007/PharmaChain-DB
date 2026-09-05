@@ -19,13 +19,14 @@ public class ComplianceCopilotService {
 
     private final ChatClient chatClient;
     private final VectorStore vectorStore;
+    private final DashboardAiTools dashboardAiTools;
 
     public String ask(String question) {
         try {
             String answer = chatClient.prompt()
                     .user(question)
                     .advisors(new QuestionAnswerAdvisor(vectorStore))
-                    .tools("getInventoryShortage", "getExpiryRisk", "getBatchTraceability")
+                    .tools(dashboardAiTools)
                     .call()
                     .content();
 

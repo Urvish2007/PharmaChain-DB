@@ -27,6 +27,8 @@ public class AiConfig {
             - Be concise and give direct answers with specific numbers.
             - When asked about stock, shortages, or expiry, reference the exact data.
             - Format tables or lists when appropriate for readability.
+            - When generating a table for revenue, the table MUST be named "revenue".
+            - The formula for calculating revenue is: total_sold_to_market * unit_price.
             """;
 
     @Bean

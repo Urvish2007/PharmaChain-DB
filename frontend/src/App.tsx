@@ -8,6 +8,7 @@ import ExpiryDashboard from './pages/ExpiryDashboard';
 import TraceabilityDashboard from './pages/TraceabilityDashboard';
 import TransactionsDashboard from './pages/TransactionsDashboard';
 import FinancialDashboard from './pages/FinancialDashboard';
+import BatchesManagement from './pages/BatchesManagement';
 import Copilot from './pages/Copilot';
 import AmbientBackground from './components/3d/AmbientBackground';
 
@@ -31,6 +32,7 @@ function App() {
             <Route path="/dashboard/expiry" element={<ExpiryDashboard />} />
             <Route path="/dashboard/traceability" element={<TraceabilityDashboard />} />
             <Route path="/dashboard/transactions" element={<TransactionsDashboard />} />
+            <Route path="/dashboard/batches" element={<BatchesManagement />} />
             <Route path="/dashboard/financials" element={<FinancialDashboard />} />
             <Route path="/copilot" element={<Copilot />} />
             </Route>
@@ -45,3 +47,5 @@ function App() {
 }
 
 export default App;
+
+// Trigger HMR

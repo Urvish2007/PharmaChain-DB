@@ -9,7 +9,8 @@ import {
   LogOut,
   Shield,
   Layers,
-  DollarSign
+  DollarSign,
+  Archive
 } from 'lucide-react';
 import { cn } from '../utils/cn';
 import PageTransition from '../components/ui/PageTransition';
@@ -28,6 +29,7 @@ const MainLayout: React.FC = () => {
     { name: 'Expiry Risk', href: '/dashboard/expiry', icon: AlertTriangle },
     { name: 'Batch Traceability', href: '/dashboard/traceability', icon: Search },
     { name: 'Transactions', href: '/dashboard/transactions', icon: Layers },
+    { name: 'Batches', href: '/dashboard/batches', icon: Archive },
     { name: 'Financials', href: '/dashboard/financials', icon: DollarSign },
     { name: 'AI Copilot', href: '/copilot', icon: MessageSquare },
   ];

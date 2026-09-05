@@ -75,7 +75,7 @@ graph TD
         subgraph AICopilot [AI Copilot System]
             SpringAI[Spring AI ChatClient]
             Groq[Groq LLM API]
-            Tools[@Tool DB Queries]
+            Tools["@Tool DB Queries"]
             RAG[pgvector RAG Advisor]
             SpringAI --> Groq
             SpringAI --> Tools
@@ -180,9 +180,9 @@ flowchart TD
     end
     
     subgraph Live_Data [PostgreSQL Live Data Tools]
-        ToolCalling -->|@Tool| Inv(getInventoryShortage)
-        ToolCalling -->|@Tool| Exp(getExpiryRisk)
-        ToolCalling -->|@Tool| Trace(getBatchTraceability)
+        ToolCalling -->|"@Tool"| Inv(getInventoryShortage)
+        ToolCalling -->|"@Tool"| Exp(getExpiryRisk)
+        ToolCalling -->|"@Tool"| Trace(getBatchTraceability)
         
         Inv --> V_Inv[(v_inventory_shortage view)]
         Exp --> V_Exp[(v_expiry_risk view)]
@@ -195,7 +195,7 @@ flowchart TD
     end
     
     subgraph Web_Search [External Information]
-        ToolCalling -->|@Tool| Web(searchMedicineInfo / searchFdaGuidelines)
+        ToolCalling -->|"@Tool"| Web(searchMedicineInfo / searchFdaGuidelines)
         Web --> Internet((Live Web/FDA.gov))
     end
     

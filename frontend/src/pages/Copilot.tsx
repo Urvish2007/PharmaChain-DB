@@ -29,6 +29,12 @@ const Copilot: React.FC = () => {
     scrollToBottom();
   }, [messages]);
 
+  useEffect(() => {
+    if ('Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+      Notification.requestPermission();
+    }
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim()) return;
@@ -46,6 +52,12 @@ const Copilot: React.FC = () => {
         || (typeof data === 'string' && data.trim() ? data : null)
         || 'Received an empty response. The AI service may be temporarily unavailable — please try again.';
       setMessages(prev => [...prev, { role: 'assistant', content: answer }]);
+      
+      if (document.hidden && 'Notification' in window && Notification.permission === 'granted') {
+        new Notification('PharmaChain Copilot', {
+          body: 'The AI Copilot has responded to your question.',
+        });
+      }
     } catch (err: any) {
       const serverMsg = err?.response?.data?.message
         || err?.response?.data?.error

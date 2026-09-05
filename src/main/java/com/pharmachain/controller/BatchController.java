@@ -56,4 +56,17 @@ public class BatchController {
         DispenseMaterialRequest scoped = new DispenseMaterialRequest(batchNo, request.itemId(), request.quantityIssued());
         return service.dispenseMaterial(scoped);
     }
+
+    @PutMapping("/{batchNo}")
+    @PreAuthorize("hasAnyRole('ADMIN','PRODUCTION_SUPERVISOR')")
+    public Batch updateBatch(@PathVariable Long batchNo, @Valid @RequestBody CreateBatchRequest request) {
+        return service.updateBatch(batchNo, request);
+    }
+
+    @DeleteMapping("/{batchNo}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public org.springframework.http.ResponseEntity<Void> deleteBatch(@PathVariable Long batchNo) {
+        service.deleteBatch(batchNo);
+        return org.springframework.http.ResponseEntity.noContent().build();
+    }
 }

@@ -116,4 +116,32 @@ public class BatchService {
         // trg_deduct_stock_on_dispense fires here and decrements Warehouse.stock atomically.
         return dispensingRepository.save(dispensing);
     }
+
+    @Transactional
+    public Batch updateBatch(Long batchNo, CreateBatchRequest request) {
+        Batch batch = findById(batchNo);
+        if (request.mfgDate().isAfter(java.time.LocalDate.now())) {
+            throw new BusinessRuleViolationException(
+                    "Manufacturing date cannot be in the future: " + request.mfgDate());
+        }
+        if (request.expDate().isBefore(request.mfgDate().plusMonths(6))) {
+            throw new BusinessRuleViolationException(
+                    "Expiry date must be at least 6 months after the manufacturing date");
+        }
+        
+        batch.setBatchSize(request.batchSize());
+        batch.setMfgDate(request.mfgDate());
+        batch.setExpDate(request.expDate());
+        batch.setProductId(request.productId());
+        if (request.stockQty() != null) {
+            batch.setStockQty(request.stockQty());
+        }
+        return batchRepository.save(batch);
+    }
+
+    @Transactional
+    public void deleteBatch(Long batchNo) {
+        Batch batch = findById(batchNo);
+        batchRepository.delete(batch);
+    }
 }

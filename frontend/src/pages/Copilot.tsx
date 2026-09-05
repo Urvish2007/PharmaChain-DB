@@ -1,4 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import api from '../api/client';
 import { MessageSquare, Send, User, Bot, AlertCircle } from 'lucide-react';
 import { GlassCard } from '../components/ui/GlassCard';
@@ -12,7 +14,7 @@ interface Message {
 
 const Copilot: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'assistant', content: 'Hello! I am the PharmaChain Compliance Copilot. Ask me about compliance rules or query live data.' }
+    { role: 'assistant', content: 'Hello! I am the PharmaChain Compliance Copilot. I can help you with:\n\n• 📊 Live database queries — inventory, batches, expiry risk, traceability\n• 📋 Compliance rules — FDA regulations, audit procedures\n• 🌐 Medicine information — search the internet for drug side effects, interactions, dosage, and more\n\nAsk me anything!' }
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -100,7 +102,9 @@ const Copilot: React.FC = () => {
                       ? 'bg-blue-600/40 border-blue-500/30 text-white rounded-tr-sm' 
                       : 'bg-white/10 border-white/10 text-gray-100 rounded-tl-sm'
                   }`}>
-                    <p className="text-[15px] leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                    <div className="text-[15px] leading-relaxed prose prose-invert max-w-none prose-p:leading-relaxed prose-pre:bg-black/50 prose-pre:border prose-pre:border-white/10 prose-th:bg-white/10 prose-th:px-4 prose-th:py-2 prose-td:px-4 prose-td:py-2 prose-table:border-collapse prose-table:w-auto prose-table:border prose-table:border-white/20">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+                    </div>
                   </div>
                 </div>
               </motion.div>

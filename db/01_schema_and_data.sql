@@ -86,7 +86,7 @@ CREATE TABLE Warehouse (
     Item_ID     BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     Material_ID VARCHAR(20) NOT NULL REFERENCES Material_Master(Material_ID) ON DELETE CASCADE ON UPDATE CASCADE,
     Invoice_No  NUMERIC(10) NOT NULL REFERENCES Transactions(Invoice_No) ON DELETE CASCADE ON UPDATE CASCADE,
-    UT_Q_A      VARCHAR(2)  NOT NULL,
+    UT_Q_A      VARCHAR(2)  NOT NULL CHECK (UT_Q_A IN ('UT', 'QA', 'A', 'R', 'QU')),
     Stock       NUMERIC(10) NOT NULL CHECK (Stock > 0),
     CONSTRAINT uq_warehouse_mat_inv UNIQUE (Material_ID, Invoice_No)
 );
@@ -127,7 +127,7 @@ CREATE TABLE Batch (
     Exp_Date         DATE,
     Product_ID       VARCHAR(20) REFERENCES Product_Master(Product_ID) ON DELETE CASCADE ON UPDATE CASCADE,
     Stock_Qty        NUMERIC(10) NOT NULL CHECK (Stock_Qty >= 0),
-    UT_Q_A           VARCHAR(2)  NOT NULL,
+    UT_Q_A           VARCHAR(2)  NOT NULL CHECK (UT_Q_A IN ('UT', 'QA', 'A', 'R', 'QU')),
     Yield_Percentage NUMERIC(5,2) DEFAULT 98.50 CHECK (Yield_Percentage >= 0 AND Yield_Percentage <= 100)
 );
 
@@ -665,8 +665,42 @@ AFTER INSERT ON Material_Dispensing
 FOR EACH ROW
 EXECUTE FUNCTION automate_warehouse_stock();
 
+CREATE OR REPLACE FUNCTION prevent_dispensing_updates()
+RETURNS TRIGGER 
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    RAISE EXCEPTION 'Updates to dispensing logs are strictly prohibited for FDA compliance. Issue a return/adjust transaction instead.';
+END;
+$$;
+
+CREATE TRIGGER trg_prevent_dispensing_updates
+BEFORE UPDATE ON Material_Dispensing
+FOR EACH ROW
+EXECUTE FUNCTION prevent_dispensing_updates();
+
 --- This is an example of trigger when
 INSERT INTO Material_Dispensing (Batch_No, Item_ID, Quantity_Issued) VALUES (5001, 2, 999999);
+
+
+CREATE OR REPLACE FUNCTION sync_material_qa()
+RETURNS TRIGGER 
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    IF NEW.Results = 'PASSED' THEN
+        UPDATE Warehouse SET UT_Q_A = 'QA' WHERE Item_ID = NEW.Item_ID;
+    ELSIF NEW.Results = 'FAILED' THEN
+        UPDATE Warehouse SET UT_Q_A = 'R' WHERE Item_ID = NEW.Item_ID;
+    END IF;
+    RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trg_sync_material_qa
+AFTER INSERT OR UPDATE ON Material_Quality_Check
+FOR EACH ROW
+EXECUTE FUNCTION sync_material_qa();
 
 
 --- Trigger-2 :
@@ -704,9 +738,9 @@ BEGIN
 END;
 $$;
 
--- Bind the trigger to fire BEFORE the sale is finalized
+-- Bind the trigger to fire BEFORE the sale is finalized (or updated)
 CREATE TRIGGER trg_prevent_bad_sales
-BEFORE INSERT ON FG_Transaction
+BEFORE INSERT OR UPDATE ON FG_Transaction
 FOR EACH ROW
 EXECUTE FUNCTION enforce_quality_control();
 
@@ -790,6 +824,25 @@ END;
 $$;
 
 -- Bind the trigger to listen AFTER someone touches the QC table
+
+CREATE OR REPLACE FUNCTION sync_product_qa()
+RETURNS TRIGGER 
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    IF NEW.Results = 'PASSED' THEN
+        UPDATE Batch SET UT_Q_A = 'QA' WHERE Batch_No = NEW.Batch_No;
+    ELSIF NEW.Results = 'FAILED' THEN
+        UPDATE Batch SET UT_Q_A = 'R' WHERE Batch_No = NEW.Batch_No;
+    END IF;
+    RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trg_sync_product_qa
+AFTER INSERT OR UPDATE ON Product_Quality_Check
+FOR EACH ROW
+EXECUTE FUNCTION sync_product_qa();
 CREATE TRIGGER trg_audit_qc_changes
 AFTER UPDATE OR DELETE ON Product_Quality_Check
 FOR EACH ROW

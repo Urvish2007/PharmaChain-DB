@@ -84,19 +84,7 @@ const Login: React.FC = () => {
           </GlassButton>
         </div>
         
-        <div className="mt-8 pt-6 border-t border-white/10">
-          <p className="text-xs font-medium text-blue-200/50 uppercase tracking-widest mb-3">Demo Accounts</p>
-          <div className="space-y-2 text-sm text-gray-300">
-            <div className="flex justify-between items-center bg-white/5 px-3 py-2 rounded-md border border-white/5">
-              <span className="text-gray-400">Admin</span>
-              <span className="font-mono text-blue-300">admin / Admin@123</span>
-            </div>
-            <div className="flex justify-between items-center bg-white/5 px-3 py-2 rounded-md border border-white/5">
-              <span className="text-gray-400">QC Analyst</span>
-              <span className="font-mono text-blue-300">qc.analyst / Qc@12345</span>
-            </div>
-          </div>
-        </div>
+
       </form>
     </GlassCard>
   );

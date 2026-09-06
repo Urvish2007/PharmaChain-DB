@@ -63,7 +63,9 @@ graph TD
     subgraph Client_Tier [Client Tier]
         ReactUI[React + TypeScript UI<br>Vite / TailwindCSS]
         Dashboards[Real-Time Dashboards<br>Inventory/Expiry/Financial]
+        IoTSensors[IoT Sensors<br>Cold-Chain Telemetry]
         ReactUI --- Dashboards
+        IoTSensors -.-> ReactUI
     end
 
     %% Application Tier
@@ -93,8 +95,10 @@ graph TD
         Triggers[FDA Compliance Triggers]
         Views[Real-time Views]
         PGVector[(pgvector<br>Compliance Docs)]
+        Ledger[(Audit Ledger<br>SHA-256 Crypto)]
         DB --- Triggers
         DB --- Views
+        DB --- Ledger
     end
     
     %% AI Inference Tier
@@ -105,6 +109,7 @@ graph TD
     %% Connections
     Client_Tier ==>|HTTP / REST + JWT| Application_Tier
     Services ==>|JPA / Hibernate| Data_Tier
+    IoTSensors ==>|HTTP POST| Controllers
     Tools -.->|JDBC| Views
     RAG -.->|Similarity Search| PGVector
     RAG <==>|Generate Embeddings| Ollama
@@ -134,6 +139,7 @@ erDiagram
     BATCH_MASTER ||--o{ QC_REPORT : "tested by"
     BATCH_MASTER ||--o{ FG_TRANSACTIONS : "sold via"
     BATCH_MASTER ||--o{ RECALL_LOG : "tracked in"
+    BATCH_MASTER ||--o{ AUDIT_LEDGER : "audited via"
     PRODUCT_MASTER ||--o{ BATCH_MASTER : "produces"
     EMPLOYEE_MASTER ||--o{ PRODUCTION_LOG : "operated by"
     EQUIPMENT_MASTER ||--o{ PRODUCTION_LOG : "used in"
@@ -153,6 +159,15 @@ erDiagram
         string material_id FK
         decimal stock_qty
         string status
+    }
+    
+    AUDIT_LEDGER {
+        bigint id PK
+        string entity_name
+        string entity_id
+        string event_type
+        string data_hash
+        string previous_hash
     }
 ```
 
@@ -218,6 +233,9 @@ flowchart TD
 - 📊 **Real-Time Dashboards**: Track expiring batches, inventory shortages, and full traceability trees for any batch.
 - 🚨 **Emergency Recalls**: A single SQL stored procedure instantly quarantines a batch and tracks the recall reason.
 - 👥 **Staff Directory**: Secure, admin-only dashboard to manage highly-detailed pharmaceutical HR records.
+- ❄️ **IoT Cold-Chain Monitoring**: Real-time telemetry endpoints track temperature excursions and automatically trigger batch quarantines if storage conditions violate safe thresholds.
+- ⛓️ **Cryptographic Audit Ledger**: An append-only ledger using SHA-256 hashing to cryptographically link and seal critical supply chain events (QA releases, temperature deviations), ensuring immutable data integrity.
+- ✍️ **21 CFR Part 11 Compliant E-Signatures**: QA release workflows require explicit supervisor credentials re-authentication, satisfying FDA electronic signature requirements.
 
 ---
 
@@ -238,7 +256,10 @@ flowchart TD
 ├── 📁 db/                           # Database Scripts
 │   ├── 📄 01_schema_and_data.sql    # Tables, Triggers, Views, and Seed Data
 │   ├── 📄 02_security_schema.sql    # Login/Auth Tables and Demo Accounts
-│   └── 📄 03_staff_expansion.sql    # Staff Directory HR Expansion
+│   ├── 📄 03_1000_medicines.sql     # Seed Data (1000 medicines)
+│   ├── 📄 03_fda_compliance_triggers.sql # Additional Triggers
+│   ├── 📄 03_staff_expansion.sql    # Staff Directory HR Expansion
+│   └── 📄 04_audit_ledger.sql       # Cryptographic Audit Ledger Tables
 ├── 📁 frontend/                     # React User Interface
 │   ├── 📁 src/                      # React Source Code
 │   ├── 📄 package.json              # Node Dependencies

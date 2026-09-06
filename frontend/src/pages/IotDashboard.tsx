@@ -50,13 +50,10 @@ const IotDashboard = () => {
     setSending(true);
     setFeedback(null);
     try {
-      const token = localStorage.getItem('token');
-      await axios.post('/api/v1/iot/telemetry/temperature', {
+      await api.post('/iot/telemetry/temperature', {
         sensorId: `SENS-${selectedBatch}-X1`,
         batchNo: selectedBatch,
         temperatureCelsius: temperature
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
       });
       
       const isViolation = temperature < 2.0 || temperature > 8.0;

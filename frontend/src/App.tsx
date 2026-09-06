@@ -11,6 +11,8 @@ import FinancialDashboard from './pages/FinancialDashboard';
 import BatchesManagement from './pages/BatchesManagement';
 import Copilot from './pages/Copilot';
 import StaffDirectory from './pages/StaffDirectory';
+import AuditLedger from './pages/AuditLedger';
+import IotDashboard from './pages/IotDashboard';
 import AmbientBackground from './components/3d/AmbientBackground';
 
 function App() {
@@ -36,6 +38,8 @@ function App() {
             <Route path="/dashboard/batches" element={<BatchesManagement />} />
             <Route path="/dashboard/financials" element={<FinancialDashboard />} />
             <Route path="/dashboard/staff" element={<StaffDirectory />} />
+            <Route path="/dashboard/audit-ledger" element={<AuditLedger />} />
+            <Route path="/dashboard/iot" element={<IotDashboard />} />
             <Route path="/copilot" element={<Copilot />} />
             </Route>
 

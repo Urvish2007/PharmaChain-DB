@@ -12,8 +12,10 @@ import {
   DollarSign,
   Archive,
   Menu,
+  Lock,
   X,
-  Users
+  Users,
+  Activity
 } from 'lucide-react';
 import { cn } from '../utils/cn';
 import PageTransition from '../components/ui/PageTransition';
@@ -35,6 +37,8 @@ const MainLayout: React.FC = () => {
     { name: 'Transactions', href: '/dashboard/transactions', icon: Layers },
     { name: 'Batches', href: '/dashboard/batches', icon: Archive },
     { name: 'Financials', href: '/dashboard/financials', icon: DollarSign },
+    { name: 'Audit Ledger', href: '/dashboard/audit-ledger', icon: Lock },
+    { name: 'IoT Telemetry', href: '/dashboard/iot', icon: Activity },
   ];
 
   const aiNav = [

@@ -12,26 +12,42 @@ const AuthLayout: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative z-10">
+    <div className="min-h-screen flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 relative z-10">
       <motion.div 
-        initial={{ opacity: 0, y: -20 }}
+        initial={{ opacity: 0, y: -16 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, ease: "easeOut" }}
+        transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
         className="sm:mx-auto sm:w-full sm:max-w-md flex flex-col items-center"
       >
-        <div className="p-3 bg-blue-500/10 rounded-2xl border border-blue-500/20 backdrop-blur-md mb-4 shadow-[0_0_30px_rgba(59,130,246,0.3)]">
-          <Shield className="h-12 w-12 text-blue-400" />
+        <div className="relative mb-6">
+          {/* Glow behind icon */}
+          <div className="absolute inset-0 rounded-2xl bg-indigo-500/20 blur-xl scale-150" />
+          <div className="relative p-3.5 bg-indigo-500/10 rounded-2xl border border-indigo-500/20">
+            <Shield className="h-10 w-10 text-indigo-400" strokeWidth={1.5} />
+          </div>
         </div>
-        <h2 className="text-center text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-300 via-white to-blue-300 drop-shadow-lg tracking-tight">
+        <h2 className="text-center text-3xl font-bold text-white tracking-tight">
           PharmaChain
         </h2>
-        <p className="mt-2 text-center text-sm font-medium text-blue-200/80 tracking-wide uppercase letter-spacing-2">
+        <p className="mt-2 text-center text-xs font-medium text-white/30 uppercase tracking-[0.2em]">
           Secure Compliance Portal
         </p>
       </motion.div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+      <motion.div 
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.15, ease: [0.25, 0.46, 0.45, 0.94] }}
+        className="mt-8 sm:mx-auto sm:w-full sm:max-w-md"
+      >
         <Outlet />
+      </motion.div>
+
+      {/* Bottom branding */}
+      <div className="mt-12 text-center">
+        <p className="text-[11px] text-white/15">
+          Enterprise Pharmaceutical Supply Chain Management
+        </p>
       </div>
     </div>
   );

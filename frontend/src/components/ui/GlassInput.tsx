@@ -12,29 +12,29 @@ export const GlassInput = React.forwardRef<HTMLInputElement, GlassInputProps>(
     return (
       <div className="w-full">
         {label && (
-          <label className="block text-sm font-medium text-gray-200 mb-1.5 ml-1">
+          <label className="block text-xs font-medium text-white/50 uppercase tracking-wider mb-2 ml-0.5">
             {label}
           </label>
         )}
-        <div className="relative">
+        <div className="relative group">
           {icon && (
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-white/30 group-focus-within:text-indigo-400 transition-colors duration-200">
               {icon}
             </div>
           )}
           <input
             ref={ref}
             className={cn(
-              'glass-input w-full block px-4 py-2.5 sm:text-sm',
+              'glass-input w-full block px-4 py-2.5 text-sm',
               icon ? 'pl-10' : '',
-              error ? 'border-red-500/50 focus:border-red-500 focus:ring-red-500/30' : '',
+              error ? 'border-red-500/50 focus:border-red-500 focus:shadow-[0_0_0_3px_rgba(239,68,68,0.15)]' : '',
               className
             )}
             {...props}
           />
         </div>
         {error && (
-          <p className="mt-1.5 text-sm text-red-400 ml-1 font-medium">{error}</p>
+          <p className="mt-1.5 text-xs text-red-400 ml-0.5 font-medium">{error}</p>
         )}
       </div>
     );

@@ -6,6 +6,7 @@ import { GlassCard } from '../components/ui/GlassCard';
 import { GlassInput } from '../components/ui/GlassInput';
 import { GlassButton } from '../components/ui/GlassButton';
 import { User, Lock, AlertCircle } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 const Login: React.FC = () => {
   const [username, setUsername] = useState('');
@@ -41,13 +42,17 @@ const Login: React.FC = () => {
       <form className="space-y-6" onSubmit={handleSubmit}>
         
         {error && (
-          <div className="bg-red-500/10 border border-red-500/30 backdrop-blur-md rounded-lg p-4 flex items-start shadow-[0_0_15px_rgba(239,68,68,0.15)]">
-            <AlertCircle className="h-5 w-5 text-red-400 mt-0.5 mr-3 flex-shrink-0" />
-            <p className="text-sm text-red-200">{error}</p>
-          </div>
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-red-500/8 border border-red-500/20 rounded-xl p-4 flex items-start gap-3"
+          >
+            <AlertCircle className="h-4 w-4 text-red-400 mt-0.5 shrink-0" strokeWidth={1.75} />
+            <p className="text-sm text-red-300/80">{error}</p>
+          </motion.div>
         )}
 
-        <div className="space-y-4">
+        <div className="space-y-5">
           <GlassInput
             id="username"
             name="username"
@@ -57,7 +62,7 @@ const Login: React.FC = () => {
             placeholder="Enter your username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            icon={<User className="h-5 w-5" />}
+            icon={<User className="h-4 w-4" strokeWidth={1.75} />}
           />
 
           <GlassInput
@@ -69,21 +74,21 @@ const Login: React.FC = () => {
             placeholder="••••••••"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            icon={<Lock className="h-5 w-5" />}
+            icon={<Lock className="h-4 w-4" strokeWidth={1.75} />}
           />
         </div>
 
-        <div className="pt-2">
+        <div className="pt-1">
           <GlassButton
             type="submit"
             variant="primary"
+            size="lg"
             isLoading={loading}
-            className="w-full text-lg shadow-blue-500/20"
+            className="w-full"
           >
             {loading ? 'Authenticating...' : 'Sign In'}
           </GlassButton>
         </div>
-        
 
       </form>
     </GlassCard>

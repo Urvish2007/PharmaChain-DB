@@ -1,8 +1,12 @@
 import React, { useEffect, useRef } from 'react';
 
 /**
- * A single soft glowing bubble that smoothly follows the cursor.
- * Pure CSS/DOM — no Three.js, no WebGL, zero z-index fights.
+ * Premium ambient background with:
+ * - Deep layered gradients
+ * - Cursor-following glow (indigo-toned, unified palette)
+ * - Subtle grid pattern (inspired by Linear/Vercel)
+ * - Noise texture overlay
+ * - Reduced motion support
  */
 const AmbientBackground: React.FC = () => {
   const bubbleRef = useRef<HTMLDivElement>(null);
@@ -11,18 +15,21 @@ const AmbientBackground: React.FC = () => {
   const raf = useRef<number>(0);
 
   useEffect(() => {
+    // Respect reduced motion preference
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion) return;
+
     const onMove = (e: MouseEvent) => {
       pos.current = { x: e.clientX, y: e.clientY };
     };
-    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mousemove', onMove, { passive: true });
 
     const animate = () => {
-      // Lerp toward cursor for smooth lag
-      current.current.x += (pos.current.x - current.current.x) * 0.06;
-      current.current.y += (pos.current.y - current.current.y) * 0.06;
+      current.current.x += (pos.current.x - current.current.x) * 0.04;
+      current.current.y += (pos.current.y - current.current.y) * 0.04;
 
       if (bubbleRef.current) {
-        bubbleRef.current.style.transform = `translate(${current.current.x - 300}px, ${current.current.y - 300}px)`;
+        bubbleRef.current.style.transform = `translate(${current.current.x - 250}px, ${current.current.y - 250}px)`;
       }
       raf.current = requestAnimationFrame(animate);
     };
@@ -36,48 +43,79 @@ const AmbientBackground: React.FC = () => {
 
   return (
     <div
-      className="fixed inset-0 bg-[#0f172a] overflow-hidden"
-      style={{ zIndex: -1 }}
+      className="fixed inset-0 overflow-hidden"
+      style={{ zIndex: -1, background: '#060a14' }}
       aria-hidden="true"
     >
-      {/* Static gradient base */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[#0f172a] via-[#1a1040] to-[#0f172a]" />
+      {/* Base gradient — deep space feel */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background: 'radial-gradient(ellipse 80% 60% at 50% -10%, rgba(99, 102, 241, 0.08) 0%, transparent 60%), radial-gradient(ellipse 60% 50% at 80% 100%, rgba(59, 130, 246, 0.05) 0%, transparent 50%), #060a14',
+        }}
+      />
 
-      {/* Cursor-following glow bubble */}
+      {/* Subtle top-center ambient light */}
+      <div
+        className="absolute pointer-events-none"
+        style={{
+          width: 800,
+          height: 400,
+          top: -100,
+          left: '50%',
+          marginLeft: -400,
+          borderRadius: '50%',
+          background: 'radial-gradient(ellipse, rgba(99, 102, 241, 0.06) 0%, transparent 70%)',
+          filter: 'blur(60px)',
+        }}
+      />
+
+      {/* Cursor-following glow */}
       <div
         ref={bubbleRef}
         className="absolute pointer-events-none will-change-transform"
         style={{
-          width: 600,
-          height: 600,
+          width: 500,
+          height: 500,
           borderRadius: '50%',
-          background:
-            'radial-gradient(circle, rgba(99,102,241,0.18) 0%, rgba(139,92,246,0.10) 40%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(99, 102, 241, 0.12) 0%, rgba(79, 70, 229, 0.06) 40%, transparent 70%)',
           filter: 'blur(40px)',
           top: 0,
           left: 0,
         }}
       />
 
-      {/* Subtle static accent — bottom right */}
+      {/* Subtle grid pattern */}
       <div
-        className="absolute pointer-events-none"
+        className="absolute inset-0 pointer-events-none"
         style={{
-          width: 400,
-          height: 400,
-          borderRadius: '50%',
-          background:
-            'radial-gradient(circle, rgba(59,130,246,0.10) 0%, transparent 70%)',
-          filter: 'blur(60px)',
-          bottom: -80,
-          right: -80,
+          backgroundImage: `linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px)`,
+          backgroundSize: '64px 64px',
+          maskImage: 'radial-gradient(ellipse 60% 50% at 50% 50%, black 20%, transparent 80%)',
+          WebkitMaskImage: 'radial-gradient(ellipse 60% 50% at 50% 50%, black 20%, transparent 80%)',
         }}
       />
 
-      {/* Noise texture overlay */}
+      {/* Bottom-right accent */}
       <div
-        className="absolute inset-0 opacity-[0.03] mix-blend-overlay pointer-events-none"
+        className="absolute pointer-events-none"
         style={{
+          width: 300,
+          height: 300,
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(59, 130, 246, 0.06) 0%, transparent 70%)',
+          filter: 'blur(60px)',
+          bottom: -60,
+          right: -60,
+        }}
+      />
+
+      {/* Noise texture */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          opacity: 0.025,
+          mixBlendMode: 'overlay',
           backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
         }}
       />

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { GlassButton } from './GlassButton';
 
 export interface BatchFormData {
   batchNo: number;
@@ -68,31 +69,49 @@ const BatchFormModal: React.FC<BatchFormModalProps> = ({ isOpen, onClose, onSubm
     }));
   };
 
+  const inputClass = "w-full px-3.5 py-2.5 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white text-sm focus:outline-none focus:border-indigo-500 focus:bg-white/[0.06] focus:shadow-[0_0_0_3px_rgba(99,102,241,0.15)] transition-all duration-200 placeholder:text-white/25 disabled:opacity-40";
+  const labelClass = "block text-[11px] font-medium text-white/40 uppercase tracking-wider mb-1.5";
+
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+        onClick={onClose}
+      >
         <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          initial={{ opacity: 0, scale: 0.96, y: 12 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative w-full max-w-lg bg-[#0f172a] border border-white/10 rounded-2xl shadow-2xl overflow-hidden"
+          exit={{ opacity: 0, scale: 0.96, y: 12 }}
+          transition={{ duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
+          className="relative w-full max-w-lg glass-panel-heavy rounded-2xl overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
         >
-          <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-white/5">
-            <h2 className="text-xl font-bold text-white">
-              {mode === 'add' ? 'Add New Batch' : 'Edit Batch'}
-            </h2>
+          {/* Header */}
+          <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
+            <div>
+              <h2 className="text-base font-semibold text-white">
+                {mode === 'add' ? 'Add New Batch' : 'Edit Batch'}
+              </h2>
+              <p className="text-[11px] text-white/30 mt-0.5">
+                {mode === 'add' ? 'Create a new production batch' : `Editing batch #${formData.batchNo}`}
+              </p>
+            </div>
             <button
               onClick={onClose}
-              className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+              className="p-2 text-white/30 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="p-6 space-y-5">
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-300">Batch Number</label>
+              <div>
+                <label className={labelClass}>Batch Number</label>
                 <input
                   type="number"
                   name="batchNo"
@@ -100,25 +119,25 @@ const BatchFormModal: React.FC<BatchFormModalProps> = ({ isOpen, onClose, onSubm
                   disabled={mode === 'edit'}
                   value={formData.batchNo || ''}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white focus:outline-none focus:border-blue-500 transition-colors disabled:opacity-50"
+                  className={inputClass}
                 />
               </div>
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-300">Product ID</label>
+              <div>
+                <label className={labelClass}>Product ID</label>
                 <input
                   type="text"
                   name="productId"
                   required
                   value={formData.productId}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white focus:outline-none focus:border-blue-500 transition-colors"
+                  className={inputClass}
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-300">Batch Size</label>
+              <div>
+                <label className={labelClass}>Batch Size</label>
                 <input
                   type="number"
                   name="batchSize"
@@ -126,11 +145,11 @@ const BatchFormModal: React.FC<BatchFormModalProps> = ({ isOpen, onClose, onSubm
                   step="0.01"
                   value={formData.batchSize || ''}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white focus:outline-none focus:border-blue-500 transition-colors"
+                  className={inputClass}
                 />
               </div>
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-300">Stock Qty</label>
+              <div>
+                <label className={labelClass}>Stock Qty</label>
                 <input
                   type="number"
                   name="stockQty"
@@ -138,56 +157,58 @@ const BatchFormModal: React.FC<BatchFormModalProps> = ({ isOpen, onClose, onSubm
                   step="0.01"
                   value={formData.stockQty || ''}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white focus:outline-none focus:border-blue-500 transition-colors"
+                  className={inputClass}
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-300">Mfg Date</label>
+              <div>
+                <label className={labelClass}>Manufacturing Date</label>
                 <input
                   type="date"
                   name="mfgDate"
                   required
                   value={formData.mfgDate}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white focus:outline-none focus:border-blue-500 transition-colors"
+                  className={inputClass}
                 />
               </div>
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-300">Expiry Date</label>
+              <div>
+                <label className={labelClass}>Expiry Date</label>
                 <input
                   type="date"
                   name="expDate"
                   required
                   value={formData.expDate}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white focus:outline-none focus:border-blue-500 transition-colors"
+                  className={inputClass}
                 />
               </div>
             </div>
 
-            <div className="pt-4 flex justify-end space-x-3">
-              <button
+            {/* Footer */}
+            <div className="pt-2 flex justify-end gap-3">
+              <GlassButton
                 type="button"
                 onClick={onClose}
                 disabled={loading}
-                className="px-4 py-2 text-sm font-medium text-gray-300 hover:text-white bg-white/5 hover:bg-white/10 rounded-lg transition-colors"
+                size="sm"
               >
                 Cancel
-              </button>
-              <button
+              </GlassButton>
+              <GlassButton
                 type="submit"
-                disabled={loading}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-500 rounded-lg transition-colors flex items-center shadow-[0_0_15px_rgba(59,130,246,0.3)] disabled:opacity-50"
+                variant="primary"
+                isLoading={loading}
+                size="sm"
               >
-                {loading ? 'Saving...' : 'Save Batch'}
-              </button>
+                {loading ? 'Saving...' : mode === 'add' ? 'Create Batch' : 'Save Changes'}
+              </GlassButton>
             </div>
           </form>
         </motion.div>
-      </div>
+      </motion.div>
     </AnimatePresence>
   );
 };

@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { useState, useEffect } from 'react';
+import api from '../api/client';
 import { motion } from 'framer-motion';
 import { Thermometer, Activity, AlertTriangle, Send, RefreshCw, Box } from 'lucide-react';
-import GlassCard from '../components/ui/GlassCard';
+import { GlassCard } from '../components/ui/GlassCard';
 
 interface Batch {
   batchNo: number;
@@ -22,15 +22,16 @@ const IotDashboard = () => {
   const fetchBatches = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      const res = await axios.get('/api/v1/batches', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      // Filter for approved or under-test batches with stock
-      const activeBatches = res.data.filter((b: Batch) => b.stockQty > 0 && b.utQA !== 'Q');
-      setBatches(activeBatches);
-      if (activeBatches.length > 0 && !selectedBatch) {
-        setSelectedBatch(activeBatches[0].batchNo);
+      const res = await api.get('/batches');
+      if (Array.isArray(res.data)) {
+        const activeBatches = res.data.filter((b: Batch) => b.stockQty > 0 && b.utQA !== 'Q');
+        setBatches(activeBatches);
+        if (activeBatches.length > 0 && !selectedBatch) {
+          setSelectedBatch(activeBatches[0].batchNo);
+        }
+      } else {
+        console.error('API did not return an array:', res.data);
+        setBatches([]);
       }
     } catch (err) {
       console.error(err);

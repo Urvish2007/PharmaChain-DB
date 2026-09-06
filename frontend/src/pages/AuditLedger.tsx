@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import { useEffect, useState } from 'react';
+import api from '../api/client';
 import { motion } from 'framer-motion';
 import { ShieldCheck, ShieldAlert, Link, Lock, Hash, Clock, User, Box } from 'lucide-react';
 
@@ -27,11 +27,13 @@ const AuditLedger = () => {
 
   const fetchLedger = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await axios.get('/api/v1/audit-ledger', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setRecords(res.data);
+      const res = await api.get('/audit-ledger');
+      if (Array.isArray(res.data)) {
+        setRecords(res.data);
+      } else {
+        console.error('API did not return an array:', res.data);
+        setRecords([]);
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -43,14 +45,11 @@ const AuditLedger = () => {
     setVerifying(true);
     setVerificationResult(null);
     try {
-      const token = localStorage.getItem('token');
-      const res = await axios.get('/api/v1/audit-ledger/verify', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await api.get('/audit-ledger/verify');
       setVerificationResult(res.data);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      setVerificationResult({ isValid: false, message: 'Verification request failed' });
+      setVerificationResult({ isValid: false, message: err.response?.data?.message || 'Verification request failed' });
     } finally {
       setVerifying(false);
     }
@@ -110,7 +109,7 @@ const AuditLedger = () => {
       )}
 
       <div className="relative space-y-8 before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-emerald-500/20 before:to-transparent mt-8">
-        {records.map((record, idx) => (
+        {(Array.isArray(records) ? records : []).map((record, idx) => (
           <motion.div
             key={record.id}
             initial={{ opacity: 0, y: 20 }}

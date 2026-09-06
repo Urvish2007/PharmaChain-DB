@@ -21,11 +21,13 @@ public class EmployeeController {
     private final EmployeeService service;
 
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public List<EmployeeMaster> findAll() {
         return service.findAll();
     }
 
     @GetMapping("/{empId}")
+    @PreAuthorize("hasRole('ADMIN')")
     public EmployeeMaster findById(@PathVariable String empId) {
         return service.findById(empId);
     }

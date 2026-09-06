@@ -39,4 +39,22 @@ public class EmployeeMaster {
     @Column(name = "hire_date", nullable = false)
     @NotNull
     private LocalDate hireDate;
+
+    @Column(name = "email", length = 80)
+    private String email;
+
+    @Column(name = "phone", length = 15)
+    private String phone;
+
+    @Column(name = "status", length = 15)
+    private String status;
+
+    @Column(name = "shift", length = 10)
+    private String shift;
+
+    @Column(name = "salary_grade", length = 5)
+    private String salaryGrade;
+
+    @Column(name = "reporting_to", length = 20)
+    private String reportingTo;
 }

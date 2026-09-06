@@ -37,3 +37,18 @@ export interface BatchTraceability {
   rawMaterialsUsed: string;
   totalSoldToMarket: number;
 }
+
+export interface Employee {
+  empId: string;
+  empName: string;
+  department: string;
+  role: string;
+  hireDate: string;
+  email: string | null;
+  phone: string | null;
+  status: string | null;
+  shift: string | null;
+  salaryGrade: string | null;
+  reportingTo: string | null;
+}
+

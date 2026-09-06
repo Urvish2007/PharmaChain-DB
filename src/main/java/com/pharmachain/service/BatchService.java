@@ -149,6 +149,16 @@ public class BatchService {
     }
 
     @Transactional
+    public Batch releaseQA(Long batchNo) {
+        Batch batch = findById(batchNo);
+        if (!"UT".equals(batch.getUtQA())) {
+            throw new BusinessRuleViolationException("Batch is not under test (UT). Current status: " + batch.getUtQA());
+        }
+        batch.setUtQA("A");
+        return batchRepository.save(batch);
+    }
+
+    @Transactional
     public void deleteBatch(Long batchNo) {
         Batch batch = findById(batchNo);
         batchRepository.delete(batch);

@@ -57,6 +57,12 @@ public class BatchController {
         return service.dispenseMaterial(scoped);
     }
 
+    @PostMapping("/{batchNo}/qa-release")
+    @PreAuthorize("hasAnyRole('ADMIN','QUALITY_ASSURANCE')")
+    public Batch releaseQA(@PathVariable Long batchNo) {
+        return service.releaseQA(batchNo);
+    }
+
     @PutMapping("/{batchNo}")
     @PreAuthorize("hasAnyRole('ADMIN','PRODUCTION_SUPERVISOR')")
     public Batch updateBatch(@PathVariable Long batchNo, @Valid @RequestBody CreateBatchRequest request) {

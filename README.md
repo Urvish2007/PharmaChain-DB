@@ -217,6 +217,7 @@ flowchart TD
 - 🤖 **Spring AI Copilot (RAG + Tools)**: Ask the system natural questions. It reads live database records (using Tool Calling) and compliance PDFs (using pgvector embeddings) to give you accurate answers.
 - 📊 **Real-Time Dashboards**: Track expiring batches, inventory shortages, and full traceability trees for any batch.
 - 🚨 **Emergency Recalls**: A single SQL stored procedure instantly quarantines a batch and tracks the recall reason.
+- 👥 **Staff Directory**: Secure, admin-only dashboard to manage highly-detailed pharmaceutical HR records.
 
 ---
 
@@ -236,7 +237,8 @@ flowchart TD
 📁 PharmaChain/
 ├── 📁 db/                           # Database Scripts
 │   ├── 📄 01_schema_and_data.sql    # Tables, Triggers, Views, and Seed Data
-│   └── 📄 02_security_schema.sql    # Login/Auth Tables and Demo Accounts
+│   ├── 📄 02_security_schema.sql    # Login/Auth Tables and Demo Accounts
+│   └── 📄 03_staff_expansion.sql    # Staff Directory HR Expansion
 ├── 📁 frontend/                     # React User Interface
 │   ├── 📁 src/                      # React Source Code
 │   ├── 📄 package.json              # Node Dependencies
@@ -278,6 +280,7 @@ Load the schema and seed data:
 ```bash
 psql -h localhost -U postgres -d pharmachain -f db/01_schema_and_data.sql
 psql -h localhost -U postgres -d pharmachain -f db/02_security_schema.sql
+psql -h localhost -U postgres -d pharmachain -f db/03_staff_expansion.sql
 ```
 
 ### 3. Start the Backend

@@ -24,6 +24,7 @@ public class QualityCheckService {
     private final MaterialQualityCheckRepository materialQcRepository;
     private final ProductQualityCheckRepository productQcRepository;
     private final QcAuditLogRepository auditLogRepository;
+    private final AuditLedgerService auditLedgerService;
 
     public List<MaterialQualityCheck> materialChecksFor(Long itemId) {
         return materialQcRepository.findByItemId(itemId);
@@ -51,7 +52,12 @@ public class QualityCheckService {
                 .results(request.results())
                 .empId(request.empId())
                 .build();
-        return materialQcRepository.save(check);
+        MaterialQualityCheck savedCheck = materialQcRepository.save(check);
+        
+        auditLedgerService.logAction("MATERIAL_QC_SUBMIT", "MaterialQualityCheck", 
+            request.reportId(), request);
+            
+        return savedCheck;
     }
 
     public List<ProductQualityCheck> productChecksFor(Long batchNo) {
@@ -91,7 +97,12 @@ public class QualityCheckService {
                 .results(request.results())
                 .empId(request.empId())
                 .build();
-        return productQcRepository.save(check);
+        ProductQualityCheck savedCheck = productQcRepository.save(check);
+        
+        auditLedgerService.logAction("PRODUCT_QC_SUBMIT", "ProductQualityCheck", 
+            request.reportId(), request);
+            
+        return savedCheck;
     }
 
     public List<QcAuditLog> auditTrailFor(String reportId) {

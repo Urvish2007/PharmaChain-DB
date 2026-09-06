@@ -25,6 +25,7 @@ public class BatchService {
     private final BatchRepository batchRepository;
     private final WarehouseRepository warehouseRepository;
     private final MaterialDispensingRepository dispensingRepository;
+    private final AuditLedgerService auditLedgerService;
 
     public List<Batch> findAll() {
         return batchRepository.findAll();
@@ -72,7 +73,10 @@ public class BatchService {
                 .stockQty(request.stockQty() != null ? request.stockQty() : request.batchSize())
                 .utQA("UT")
                 .build();
-        return batchRepository.save(batch);
+        Batch savedBatch = batchRepository.save(batch);
+        
+        auditLedgerService.logAction("CREATE_BATCH", "Batch", savedBatch.getBatchNo().toString(), request);
+        return savedBatch;
     }
 
     /**
@@ -114,7 +118,12 @@ public class BatchService {
                 .quantityIssued(request.quantityIssued())
                 .build();
         // trg_deduct_stock_on_dispense fires here and decrements Warehouse.stock atomically.
-        return dispensingRepository.save(dispensing);
+        MaterialDispensing savedDispensing = dispensingRepository.save(dispensing);
+        
+        auditLedgerService.logAction("DISPENSE_MATERIAL", "MaterialDispensing", 
+            request.batchNo() + "-" + request.itemId(), request);
+            
+        return savedDispensing;
     }
 
     @Transactional

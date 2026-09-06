@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import api from '../api/client';
-import { Archive, AlertCircle, RefreshCw, Plus, Edit2, Trash2 } from 'lucide-react';
+import { Archive, AlertCircle, RefreshCw, Plus, Edit2, Trash2, CheckCircle } from 'lucide-react';
 import { GlassCard } from '../components/ui/GlassCard';
 import { GlassButton } from '../components/ui/GlassButton';
 import SkeletonLoader from '../components/ui/SkeletonLoader';
 import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import BatchFormModal, { BatchFormData } from '../components/ui/BatchFormModal';
+import ESignatureModal, { SignatureConfig } from '../components/ui/ESignatureModal';
 
 interface Batch {
   batchNo: number;
@@ -28,9 +29,13 @@ const BatchesManagement: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
   const [selectedBatch, setSelectedBatch] = useState<BatchFormData | null>(null);
+  
+  const [isSigModalOpen, setIsSigModalOpen] = useState(false);
+  const [sigConfig, setSigConfig] = useState<SignatureConfig | null>(null);
 
   const canEdit = user?.role === 'ADMIN' || user?.role === 'PRODUCTION_SUPERVISOR';
   const canDelete = user?.role === 'ADMIN';
+  const canRelease = user?.role === 'ADMIN' || user?.role === 'QUALITY_ASSURANCE';
 
   const fetchData = async () => {
     setLoading(true);
@@ -66,6 +71,27 @@ const BatchesManagement: React.FC = () => {
       expDate: batch.expDate
     });
     setIsModalOpen(true);
+  };
+
+  const handleQAReleaseClick = (batchNo: number) => {
+    setSigConfig({
+      entityId: batchNo.toString(),
+      entityName: 'Batch',
+      action: 'QA Release'
+    });
+    setIsSigModalOpen(true);
+  };
+
+  const handleSignatureSuccess = async () => {
+    setIsSigModalOpen(false);
+    if (sigConfig?.action === 'QA Release') {
+      try {
+        await api.post(`/batches/${sigConfig.entityId}/qa-release`);
+        fetchData();
+      } catch (err: any) {
+        alert(err.response?.data?.message || 'Failed to release batch.');
+      }
+    }
   };
 
   const handleDeleteClick = async (batchNo: number) => {
@@ -151,7 +177,8 @@ const BatchesManagement: React.FC = () => {
                     <th className="text-right">Stock Qty</th>
                     <th>Mfg Date</th>
                     <th>Exp Date</th>
-                    {(canEdit || canDelete) && <th className="text-right">Actions</th>}
+                    <th>QA Status</th>
+                    {(canEdit || canDelete || canRelease) && <th className="text-right">Actions</th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -189,9 +216,28 @@ const BatchesManagement: React.FC = () => {
                         <td>
                           <span className="text-sm text-white/35 font-mono tabular-nums">{item.expDate}</span>
                         </td>
-                        {(canEdit || canDelete) && (
+                        <td>
+                          <span className={`text-xs font-semibold px-2 py-1 rounded-full ${
+                            item.utQA === 'A' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
+                            item.utQA === 'UT' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' :
+                            item.utQA === 'Q' ? 'bg-red-500/10 text-red-400 border border-red-500/20' :
+                            'bg-white/10 text-white/60'
+                          }`}>
+                            {item.utQA === 'A' ? 'Approved' : item.utQA === 'UT' ? 'Under Test' : item.utQA === 'Q' ? 'Quarantined' : item.utQA}
+                          </span>
+                        </td>
+                        {(canEdit || canDelete || canRelease) && (
                           <td className="text-right">
                             <div className="flex items-center justify-end gap-1">
+                              {canRelease && item.utQA === 'UT' && (
+                                <button 
+                                  onClick={() => handleQAReleaseClick(item.batchNo)}
+                                  title="Approve QA Release (Requires E-Signature)"
+                                  className="p-2 text-emerald-400/70 hover:text-emerald-400 hover:bg-emerald-400/10 rounded-lg transition-colors"
+                                >
+                                  <CheckCircle className="w-4 h-4" strokeWidth={1.75} />
+                                </button>
+                              )}
                               {canEdit && (
                                 <button 
                                   onClick={() => handleEditClick(item)}
@@ -237,6 +283,13 @@ const BatchesManagement: React.FC = () => {
         onSubmit={handleModalSubmit}
         mode={modalMode}
         initialData={selectedBatch}
+      />
+
+      <ESignatureModal
+        isOpen={isSigModalOpen}
+        onClose={() => setIsSigModalOpen(false)}
+        onSuccess={handleSignatureSuccess}
+        config={sigConfig}
       />
     </div>
   );

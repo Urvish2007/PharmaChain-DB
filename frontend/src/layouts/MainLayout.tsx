@@ -13,7 +13,6 @@ import {
   Archive,
   Menu,
   Lock,
-  X,
   Users,
   Activity
 } from 'lucide-react';

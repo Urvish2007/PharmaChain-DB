@@ -10,6 +10,7 @@ import TransactionsDashboard from './pages/TransactionsDashboard';
 import FinancialDashboard from './pages/FinancialDashboard';
 import BatchesManagement from './pages/BatchesManagement';
 import Copilot from './pages/Copilot';
+import StaffDirectory from './pages/StaffDirectory';
 import AmbientBackground from './components/3d/AmbientBackground';
 
 function App() {
@@ -34,6 +35,7 @@ function App() {
             <Route path="/dashboard/transactions" element={<TransactionsDashboard />} />
             <Route path="/dashboard/batches" element={<BatchesManagement />} />
             <Route path="/dashboard/financials" element={<FinancialDashboard />} />
+            <Route path="/dashboard/staff" element={<StaffDirectory />} />
             <Route path="/copilot" element={<Copilot />} />
             </Route>
 

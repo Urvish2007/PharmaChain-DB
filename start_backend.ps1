@@ -7,6 +7,6 @@ if (-not (Test-Path "apache-maven-3.9.6")) {
 }
 $env:PATH = "$PWD\apache-maven-3.9.6\bin;" + $env:PATH
 Write-Host "Building project..."
-mvn clean package -DskipTests
+.\apache-maven-3.9.6\bin\mvn.cmd clean package -DskipTests
 Write-Host "Starting Spring Boot app..."
-mvn spring-boot:run
+.\apache-maven-3.9.6\bin\mvn.cmd spring-boot:run

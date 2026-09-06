@@ -15,3 +15,8 @@ target/
 
 # Env
 .env
+
+# Ignore Maven and LaTeX Zips
+apache-maven-3.9.6/
+maven.zip
+PharmaChain-Engineering-Guide-LaTeX-Source.zip

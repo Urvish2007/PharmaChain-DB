@@ -13,6 +13,7 @@ import Copilot from './pages/Copilot';
 import StaffDirectory from './pages/StaffDirectory';
 import AuditLedger from './pages/AuditLedger';
 import IotDashboard from './pages/IotDashboard';
+import PublicTracking from './pages/PublicTracking';
 import AmbientBackground from './components/3d/AmbientBackground';
 
 function App() {
@@ -23,6 +24,9 @@ function App() {
         {/* Isolation wrapper ensures content always renders above the WebGL canvas */}
         <div style={{ position: 'relative', zIndex: 1, isolation: 'isolate' }}>
           <Routes>
+            {/* Public Routes */}
+            <Route path="/tracking" element={<PublicTracking />} />
+
             {/* Auth Routes */}
             <Route element={<AuthLayout />}>
               <Route path="/login" element={<Login />} />

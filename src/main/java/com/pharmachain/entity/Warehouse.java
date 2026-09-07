@@ -42,4 +42,8 @@ public class Warehouse {
 
     @Column(name = "stock", nullable = false)
     private BigDecimal stock;
+
+    @ManyToOne
+    @JoinColumn(name = "facility_id", nullable = false)
+    private FacilityMaster facility;
 }

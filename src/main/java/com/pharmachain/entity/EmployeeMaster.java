@@ -57,4 +57,8 @@ public class EmployeeMaster {
 
     @Column(name = "reporting_to", length = 20)
     private String reportingTo;
+
+    @ManyToOne
+    @JoinColumn(name = "facility_id")
+    private FacilityMaster facility;
 }

@@ -42,4 +42,8 @@ public class EquipmentMaster {
     @NotBlank
     @Pattern(regexp = "Active|Maintenance")
     private String status;
+
+    @ManyToOne
+    @JoinColumn(name = "facility_id")
+    private FacilityMaster facility;
 }

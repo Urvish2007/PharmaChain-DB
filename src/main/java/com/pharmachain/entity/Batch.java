@@ -49,4 +49,8 @@ public class Batch {
 
     @Column(name = "yield_percentage", precision = 5, scale = 2)
     private BigDecimal yieldPercentage;
+
+    @ManyToOne
+    @JoinColumn(name = "facility_id", nullable = false)
+    private FacilityMaster facility;
 }

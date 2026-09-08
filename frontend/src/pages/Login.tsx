@@ -28,7 +28,7 @@ const Login: React.FC = () => {
       login(response.data, username);
     } catch (err: any) {
       if (err.code === 'ERR_NETWORK') {
-        setError('Network error: Cannot connect to backend at localhost:8081. Is the Spring Boot server running?');
+        setError('Network error: Cannot connect to the backend server. Is it running?');
       } else {
         setError(err.response?.data?.message || 'Invalid credentials. Please try again.');
       }

@@ -1,0 +1,56 @@
+services:
+  # 1. Database - Render Managed PostgreSQL
+  # Render automatically provisions a Postgres instance. pgvector is supported by default.
+  - type: pgo
+    name: pharmachain-db
+    plan: free
+
+  # 2. Backend - Spring Boot
+  - type: web
+    name: pharmachain-backend
+    env: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    envVars:
+      - key: DB_HOST
+        fromDatabase:
+          name: pharmachain-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: pharmachain-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: pharmachain-db
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: pharmachain-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: pharmachain-db
+          property: password
+      - key: JWT_SECRET
+        generateValue: true
+      - key: INGEST_COMPLIANCE_DOCS
+        value: "false" # Set to true if you set up Ollama/AI locally or on another service
+      # To enable AI features on production, add GROQ_API_KEY manually via Render Dashboard
+      # and configure an Ollama base URL if using Ollama for embeddings.
+
+  # 3. Frontend - React/Vite
+  - type: web
+    name: pharmachain-frontend
+    env: static
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: frontend/dist
+    envVars:
+      - key: VITE_API_URL
+        # We construct the API URL from the backend service URL.
+        fromService:
+          type: web
+          name: pharmachain-backend
+          envVarKey: RENDER_EXTERNAL_URL
+        # Note: You may need to append `/api/v1` manually in the Render dashboard
+        # if `fromService` injects the root URL and your client doesn't append it.

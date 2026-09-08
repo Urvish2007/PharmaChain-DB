@@ -1,9 +1,10 @@
-services:
+databases:
   # 1. Database - Render Managed PostgreSQL
   # Render automatically provisions a Postgres instance. pgvector is supported by default.
-  - type: psql
-    name: pharmachain-db
+  - name: pharmachain-db
     plan: free
+
+services:
 
   # 2. Backend - Spring Boot
   - type: web

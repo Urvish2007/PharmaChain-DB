@@ -36,6 +36,10 @@ public class EquipmentMaster {
     @Column(name = "last_calibration_date", nullable = false)
     private LocalDate lastCalibrationDate;
 
+    @Column(name = "calibration_frequency_days", nullable = false)
+    @Builder.Default
+    private Integer calibrationFrequencyDays = 30;
+
     /** Active | Maintenance - enforced by a CHECK constraint in the DB. */
     // DB: CHECK (Status IN ('Active','Maintenance'))
     @Column(name = "status", length = 20, nullable = false)

@@ -59,3 +59,33 @@ DROP TRIGGER IF EXISTS trg_deduct_stock_on_dispense ON Material_Dispensing;
 CREATE TRIGGER trg_deduct_stock_on_dispense
 BEFORE INSERT ON Material_Dispensing
 FOR EACH ROW EXECUTE FUNCTION deduct_stock_on_dispense();
+
+-- Rule 4: Prevent Use of Uncalibrated Equipment
+CREATE OR REPLACE FUNCTION fn_prevent_uncalibrated_equipment()
+RETURNS TRIGGER AS $$
+DECLARE
+    v_last_calibration DATE;
+    v_freq_days NUMERIC(10);
+BEGIN
+    IF NEW.Equipment_ID IS NOT NULL THEN
+        SELECT Last_Calibration_Date, Calibration_Frequency_Days
+        INTO v_last_calibration, v_freq_days
+        FROM Equipment_Master
+        WHERE Equipment_ID = NEW.Equipment_ID;
+
+        IF v_last_calibration + (v_freq_days * interval '1 day') < CURRENT_DATE THEN
+            RAISE EXCEPTION 'FDA Compliance Violation: Equipment % is past its calibration due date (Due: %).', 
+                NEW.Equipment_ID, (v_last_calibration + (v_freq_days * interval '1 day'));
+        END IF;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_prevent_uncalibrated_equipment ON Production_Log;
+CREATE TRIGGER trg_prevent_uncalibrated_equipment
+BEFORE INSERT OR UPDATE ON Production_Log
+FOR EACH ROW
+EXECUTE FUNCTION fn_prevent_uncalibrated_equipment();
+
+

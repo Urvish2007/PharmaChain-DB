@@ -44,11 +44,12 @@ CREATE TABLE Employee_Master (
 );
 
 CREATE TABLE Equipment_Master (
-    Equipment_ID          VARCHAR(20) PRIMARY KEY,
-    Equipment_Name        VARCHAR(50) NOT NULL,
-    Equipment_Type        VARCHAR(30) NOT NULL,
-    Last_Calibration_Date DATE NOT NULL,
-    Status                VARCHAR(20) NOT NULL CHECK (Status IN ('Active', 'Maintenance'))
+    Equipment_ID               VARCHAR(20) PRIMARY KEY,
+    Equipment_Name             VARCHAR(50) NOT NULL,
+    Equipment_Type             VARCHAR(30) NOT NULL,
+    Last_Calibration_Date      DATE NOT NULL,
+    Calibration_Frequency_Days NUMERIC(10) NOT NULL DEFAULT 30,
+    Status                     VARCHAR(20) NOT NULL CHECK (Status IN ('Active', 'Maintenance'))
 );
 
 CREATE TABLE Product_Master (
@@ -222,27 +223,27 @@ INSERT INTO Employee_Master (Emp_ID, Emp_Name, Department, Role, Hire_Date) VALU
 ('EMP019', 'Riya Sen', 'Quality Control', 'Microbiologist', '2017-09-15'),
 ('EMP020', 'Manoj Bajpayee', 'Production', 'Shift Manager', '2013-04-20');
 
-INSERT INTO Equipment_Master (Equipment_ID, Equipment_Name, Equipment_Type, Last_Calibration_Date, Status) VALUES
-('EQ001', 'High Shear Mixer A', 'Mixer', '2023-01-15', 'Active'),
-('EQ002', 'High Shear Mixer B', 'Mixer', '2023-01-20', 'Active'),
-('EQ003', 'Fluid Bed Granulator 1', 'Granulator', '2023-01-10', 'Maintenance'),
-('EQ004', 'Rotary Tablet Press 1', 'Compressor', '2023-01-05', 'Active'),
-('EQ005', 'Rotary Tablet Press 2', 'Compressor', '2023-01-12', 'Active'),
-('EQ006', 'Auto Film Coater', 'Coater', '2023-01-01', 'Active'),
-('EQ007', 'Blister Packaging Line A', 'Packaging', '2023-01-28', 'Active'),
-('EQ008', 'Bottle Filling Line B', 'Packaging', '2023-01-15', 'Active'),
-('EQ009', 'Liquid Mixing Tank 500L', 'Liquid Processor', '2023-01-10', 'Active'),
-('EQ010', 'Syrup Bottling Station', 'Packaging', '2023-01-01', 'Active'),
-('EQ011', 'Capsule Filling Machine', 'Filler', '2023-01-11', 'Active'),
-('EQ012', 'V-Cone Blender', 'Mixer', '2023-01-09', 'Active'),
-('EQ013', 'Fluid Bed Granulator 2', 'Granulator', '2023-01-18', 'Active'),
-('EQ014', 'Tablet Checking Machine', 'QA Equipment', '2023-01-22', 'Active'),
-('EQ015', 'Cartoning Machine', 'Packaging', '2023-01-30', 'Maintenance'),
-('EQ016', 'Purified Water System', 'Utility', '2023-01-02', 'Active'),
-('EQ017', 'Air Handling Unit', 'Utility', '2023-01-03', 'Active'),
-('EQ018', 'Industrial Autoclave', 'Sterilizer', '2023-01-14', 'Active'),
-('EQ019', 'Metal Detector Line', 'QA Equipment', '2023-01-25', 'Active'),
-('EQ020', 'Shrink Wrapping Machine', 'Packaging', '2023-01-29', 'Active');
+INSERT INTO Equipment_Master (Equipment_ID, Equipment_Name, Equipment_Type, Last_Calibration_Date, Calibration_Frequency_Days, Status) VALUES
+('EQ001', 'High Shear Mixer A', 'Mixer', '2026-08-01', 30, 'Active'),
+('EQ002', 'High Shear Mixer B', 'Mixer', '2026-08-15', 30, 'Active'),
+('EQ003', 'Fluid Bed Granulator 1', 'Granulator', '2026-01-10', 180, 'Maintenance'),
+('EQ004', 'Rotary Tablet Press 1', 'Compressor', '2026-07-05', 90, 'Active'),
+('EQ005', 'Rotary Tablet Press 2', 'Compressor', '2026-06-12', 90, 'Active'),
+('EQ006', 'Auto Film Coater', 'Coater', '2026-04-01', 180, 'Active'),
+('EQ007', 'Blister Packaging Line A', 'Packaging', '2025-09-28', 365, 'Active'),
+('EQ008', 'Bottle Filling Line B', 'Packaging', '2026-08-15', 90, 'Active'),
+('EQ009', 'Liquid Mixing Tank 500L', 'Liquid Processor', '2026-08-10', 30, 'Active'),
+('EQ010', 'Syrup Bottling Station', 'Packaging', '2026-08-01', 180, 'Active'),
+('EQ011', 'Capsule Filling Machine', 'Filler', '2026-05-11', 180, 'Active'),
+('EQ012', 'V-Cone Blender', 'Mixer', '2026-08-09', 30, 'Active'),
+('EQ013', 'Fluid Bed Granulator 2', 'Granulator', '2026-07-18', 90, 'Active'),
+('EQ014', 'Tablet Checking Machine', 'QA Equipment', '2026-06-22', 90, 'Active'),
+('EQ015', 'Cartoning Machine', 'Packaging', '2025-11-30', 365, 'Maintenance'),
+('EQ016', 'Purified Water System', 'Utility', '2026-08-02', 30, 'Active'),
+('EQ017', 'Air Handling Unit', 'Utility', '2026-08-03', 30, 'Active'),
+('EQ018', 'Industrial Autoclave', 'Sterilizer', '2025-10-14', 365, 'Active'),
+('EQ019', 'Metal Detector Line', 'QA Equipment', '2026-02-25', 180, 'Active'),
+('EQ020', 'Shrink Wrapping Machine', 'Packaging', '2025-08-29', 365, 'Active');
 
 INSERT INTO Account_Master (Account_No, Account_Name, Phone_No, Address, Account_Type) VALUES
 ('ACC001', 'AK Pharma Raw Materials', '911023456789', 'Vatva, Gujarat', 'Supplier'),
